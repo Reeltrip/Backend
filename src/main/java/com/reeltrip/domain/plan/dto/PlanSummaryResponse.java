@@ -2,6 +2,7 @@ package com.reeltrip.domain.plan.dto;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +56,8 @@ public record PlanSummaryResponse(
                 days.size(),
                 placeCount,
                 coverImageUrl(days),
-                plan.getCreatedAt() == null ? null : plan.getCreatedAt().atZone(TimeConfig.SEOUL).toOffsetDateTime(),
+                plan.getCreatedAt() == null ? null
+                        : plan.getCreatedAt().atZone(TimeConfig.SEOUL).toOffsetDateTime().truncatedTo(ChronoUnit.SECONDS),
                 plan.getUser().getUserId(),
                 plan.getUser().getNickname(),
                 members);
