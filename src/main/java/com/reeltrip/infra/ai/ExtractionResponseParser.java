@@ -31,6 +31,8 @@ public class ExtractionResponseParser {
     static final int MAX_PLACE_TEXT_LENGTH = 255;
 
     private static final Pattern CODE_FENCE = Pattern.compile("^```[a-zA-Z]*\\s*(.*?)\\s*```$", Pattern.DOTALL);
+    // 원화 가격은 영상 속 환산 금액이라 쓰지 않아요 (Notion 요약카드 항목: 가격은 현지통화 기준).
+    private static final Pattern KRW_PRICE = Pattern.compile("\\d\\s*원|₩|KRW", Pattern.CASE_INSENSITIVE);
     private static final Pattern MIN_SEC = Pattern.compile("^(?:(\\d+):)?(\\d{1,2}):(\\d{2})$");
 
     private final ObjectMapper objectMapper;
@@ -103,7 +105,7 @@ public class ExtractionResponseParser {
             return new PlaceDraft(
                     null, category, name, null, null, null, null, city, null, sourceUrl, timestampSec,
                     keyPoints(node.get("keyPoints")),
-                    text(node.get("priceText"), MAX_PRICE_TEXT_LENGTH),
+                    priceText(node.get("priceText"), category),
                     null, null,
                     text(node.get("accessText"), MAX_ACCESS_TEXT_LENGTH),
                     memo,
@@ -119,6 +121,21 @@ public class ExtractionResponseParser {
                 text(node.get("method"), Integer.MAX_VALUE),
                 text(node.get("placeText"), MAX_PLACE_TEXT_LENGTH),
                 text(node.get("caution"), Integer.MAX_VALUE));
+    }
+
+    /**
+     * 가격은 옵션이고 현지 통화로 적힌 가격만 넣어요 (Notion 요약카드 항목).
+     * 숙소는 날짜마다 값이 달라 항상 비워요. 숙소는 위치만 정확하면 돼요 (S2-1).
+     */
+    private static String priceText(JsonNode node, Category category) {
+        if (category == Category.STAY) {
+            return null;
+        }
+        String value = text(node, MAX_PRICE_TEXT_LENGTH);
+        if (value == null || KRW_PRICE.matcher(value).find()) {
+            return null;
+        }
+        return value;
     }
 
     private static Category category(JsonNode node) {
