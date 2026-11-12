@@ -43,6 +43,10 @@ public enum ErrorCode {
     INVALID_PLAN_PLACE(HttpStatus.BAD_REQUEST, "계획에 넣을 수 없는 카드예요."), // (제안)
     // LlmClient가 던져요. 링크별 실패 이유로 GET /sources/{sourceId}에 담겨 내려가요.
     AI_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "링크에서 여행 정보를 찾지 못했어요."), // (제안)
+    // S4-2 AI 초안. LLM 호출·응답이 실패했을 때
+    AI_DRAFT_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI 초안을 만들지 못했어요. 직접 계획을 짜 주세요."), // (제안)
+    // S4-2 AI 초안. 보관함에 계획 도시의 장소 카드가 없을 때
+    AI_DRAFT_NO_PLACES(HttpStatus.BAD_REQUEST, "보관함에 이 도시의 장소가 없어 초안을 만들 수 없어요."), // (제안)
     ;
 
     private final HttpStatus status;

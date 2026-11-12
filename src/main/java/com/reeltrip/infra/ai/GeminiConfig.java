@@ -55,4 +55,32 @@ public class GeminiConfig {
         return new GeminiLlmClient(restClientBuilder.requestFactory(requestFactory), apiKey, model, objectMapper,
                 ExtractionPrompt.load());
     }
+
+    /** S4-2 AI 초안. 키가 없을 때 처리는 llmClient와 같아요(prod는 실패, 그 밖은 가짜). */
+    @Bean
+    public PlanDraftClient planDraftClient(
+            RestClient.Builder restClientBuilder,
+            ObjectMapper objectMapper,
+            Environment environment,
+            @Value("${app.gemini.api-key:}") String apiKey,
+            @Value("${app.gemini.model}") String model,
+            @Value("${app.gemini.timeout-seconds}") long timeoutSeconds
+    ) {
+        if (!StringUtils.hasText(apiKey)) {
+            if (environment.acceptsProfiles(Profiles.of("prod"))) {
+                log.error("GEMINI_API_KEY가 비어 있어요. AI 초안은 모두 AI_DRAFT_FAILED로 실패해요.");
+                return request -> {
+                    throw new BusinessException(ErrorCode.AI_DRAFT_FAILED);
+                };
+            }
+            log.warn("GEMINI_API_KEY가 비어 있어 가짜 AI 초안(경도 순으로 나누기)을 써요.");
+            return new FakePlanDraftClient();
+        }
+        Duration timeout = Duration.ofSeconds(timeoutSeconds);
+        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(timeout);
+        return new GeminiPlanDraftClient(restClientBuilder.clone().requestFactory(requestFactory), apiKey, model,
+                objectMapper);
+    }
 }
