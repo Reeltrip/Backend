@@ -2,18 +2,14 @@ package com.reeltrip.infra.ai;
 
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
 import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.domain.source.entity.Platform;
 import com.reeltrip.infra.fetcher.FetchedContent;
 
 /**
- * 정해진 카드 2장(장소 1장 + 교통 1장)을 돌려주는 가짜 LlmClient.
- * BE 1이 Gemini 구현 전까지 링크 분석 흐름(S1-2 → S2-1)을 만들 때 써요. 카드는 docs/api-spec.md "LLM 출력 형식" 예시 그대로예요.
+ * 정해진 카드 2장(장소 1장 + 교통 1장)을 돌려주는 가짜 LlmClient. 카드는 docs/api-spec.md "LLM 출력 형식" 예시 그대로예요.
+ * GEMINI_API_KEY가 비어 있을 때만 GeminiConfig가 이걸 빈으로 써요. 키 없이 링크 분석 흐름(S1-2 → S2-1)을 돌려 볼 때 써요.
  */
-// TODO: 가짜 응답, 실제 구현으로 교체
-@Component
 public class FakeLlmClient implements LlmClient {
 
     private static final String CITY = "후쿠오카";
