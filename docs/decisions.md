@@ -72,3 +72,21 @@
 ## 기술 스택 (Notion 기술 스택 페이지와 같음)
 
 Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Security + JWT + BCrypt, JUnit 5 + Mockito, `@Async` 백그라운드 작업, GCP Cloud Run(서울). Swagger(springdoc-openapi)는 제안 상태라 의존성 추가 전에 묻습니다.
+
+## 2026-11-12 BE 2 작업 시작 때 정한 것
+
+문서끼리 어긋나거나 문서에 없던 것을 사용자(BE 2)가 아래로 정했습니다. PR 본문 "정한 것"에도 적습니다.
+
+| # | 대상 | 결정 |
+| --- | --- | --- |
+| 1 | 숙소 단위 | `AGENTS.md`의 "일자마다 숙소" 대신 스키마대로 계획 단위(`plan_stay`). 일자별 출발·도착 숙소는 저장하지 않음 |
+| 2 | 남의 비공유 계획 조회 | `404` (`403 PLAN_FORBIDDEN`은 공유받은 멤버가 권한 밖 동작을 할 때만) |
+| 3 | 플랜B 카테고리 | 대신할 노드와 같은 카테고리만 허용 |
+| 4 | `memo` 길이 | 서버 검사 50자, 컬럼 `VARCHAR(500)`은 그대로 |
+| 5 | `place.city` | 카드 요청·응답에 `city`(선택) 추가. AI 카드는 `ExtractionResult.city`, 직접 추가는 FE가 보냄. 계획 도시와 글자가 같은 카드를 불러옴 |
+| 6 | `PATCH /plans/{planId}` 기간 줄이기 | 없어지는 일자와 그 일자의 노드·플랜B·구역을 같이 삭제(FE가 확인 팝업). 시작일이 바뀌면 남은 일자 날짜를 다시 매김 |
+| 7 | 공유 멤버 | 공유가 켜진 계획을 로그인 사용자가 `GET /plans/{planId}`로 열면 `READ_ONLY`→`VIEWER`, `EDIT`→`EDITOR`로 추가(이미 멤버면 그대로). 비로그인은 공유가 켜져 있으면 읽기만. 링크 발급·계획 삭제는 `OWNER`만 |
+| 8 | 계획에 넣을 수 있는 카드 | 그 계획 `OWNER`·`EDITOR`의 카드 + 이미 그 계획에 있던 카드. 복제는 카드 참조를 그대로 두고 부른 사람의 `DRAFT` 계획 |
+| 9 | 계획에 쓰인 카드 삭제 | 그 카드를 쓰는 노드·플랜B·숙소도 같이 삭제. Notion 예외(중복 링크·중복 장소·같은 기간 계획)는 서버가 막지 않음 |
+| 10 | BE 2 에러 코드 | `PLACE_NOT_FOUND` 404 "카드를 찾을 수 없어요.", `PLAN_NOT_FOUND` 404 "계획을 찾을 수 없어요.", `PLAN_DAY_NOT_FOUND` 404 "일자를 찾을 수 없어요.", `DUPLICATE_PLAN_PLACE` 409 "이미 다른 일자에 넣은 장소예요.", `INVALID_PLAN_PLACE` 400 "계획에 넣을 수 없는 카드예요.", `AI_EXTRACTION_FAILED` 500 "링크에서 여행 정보를 찾지 못했어요.". 카드 입력 검사는 `INVALID_INPUT` |
+| 11 | 작은 값 | `radiusM` 기본 1500, `sortType`은 `LATEST`만, `categoryCounts`는 `category` 필터와 관계없이 세고 반경 필터는 적용, 완성 일자가 다시 미완성이 되면 계획을 `DRAFT`로, 시간대 Asia/Seoul(`+09:00`), Gemini 호출당 40초 제한, 테스트 H2는 `NON_KEYWORDS=USER`로 `user` 테이블 이름 유지 |
