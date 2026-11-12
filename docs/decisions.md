@@ -90,3 +90,10 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 | 9 | 계획에 쓰인 카드 삭제 | 그 카드를 쓰는 노드·플랜B·숙소도 같이 삭제. Notion 예외(중복 링크·중복 장소·같은 기간 계획)는 서버가 막지 않음 |
 | 10 | BE 2 에러 코드 | `PLACE_NOT_FOUND` 404 "카드를 찾을 수 없어요.", `PLAN_NOT_FOUND` 404 "계획을 찾을 수 없어요.", `PLAN_DAY_NOT_FOUND` 404 "일자를 찾을 수 없어요.", `DUPLICATE_PLAN_PLACE` 409 "이미 다른 일자에 넣은 장소예요.", `INVALID_PLAN_PLACE` 400 "계획에 넣을 수 없는 카드예요.", `AI_EXTRACTION_FAILED` 500 "링크에서 여행 정보를 찾지 못했어요.". 카드 입력 검사는 `INVALID_INPUT` |
 | 11 | 작은 값 | `radiusM` 기본 1500, `sortType`은 `LATEST`만, `categoryCounts`는 `category` 필터와 관계없이 세고 반경 필터는 적용, 완성 일자가 다시 미완성이 되면 계획을 `DRAFT`로, 시간대 Asia/Seoul(`+09:00`), Gemini 호출당 40초 제한, 테스트 H2는 `NON_KEYWORDS=USER`로 `user` 테이블 이름 유지 |
+
+## 2026-11-13 S4-2 AI 초안
+
+- `POST /plans/{planId}/ai-drafts`를 추가했습니다(요청 본문 없음, `200` + 계획 보기 응답). 자세한 규칙은 `docs/api-spec.md`. FE 합의 필요.
+- 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다.
+- 새 에러 코드: `AI_DRAFT_NO_PLACES`(400), `AI_DRAFT_FAILED`(500). 문구는 (제안).
+- `GEMINI_API_KEY`가 없으면 링크 분석과 같이 prod는 실패, 그 밖은 가짜 초안(경도 순으로 나누기)을 씁니다.
