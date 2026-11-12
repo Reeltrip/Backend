@@ -124,6 +124,7 @@ public class PlaceService {
     /**
      * PATCH /places/{placeId}. JSON에 들어온 필드만 바꾸고 null로 온 필드는 비워요.
      * 합친 결과로 저장 때와 같은 검사를 해요. sourceLinkId는 바꾸지 않아요(들어와도 무시).
+     * 계획(노드·플랜B·숙소)에 쓰인 카드는 카테고리를 바꿀 수 없어요. 같은 카테고리로 보내는 건 통과.
      */
     @Transactional
     public PlaceResponse modifyPlace(Long userId, Long placeId, JsonNode body) {
@@ -139,6 +140,10 @@ public class PlaceService {
         }
         PlaceContent merged = merge(place.toContent(), patch, body);
         placeValidator.validate(merged, place.getSourceLink() != null);
+        // 계획에 쓰인 카드의 카테고리가 바뀌면 "교통·팁은 노드 불가", "숙소는 STAY만" 규칙이 깨질 수 있어서 막아요
+        if (merged.category() != place.getCategory() && isUsedInPlan(placeId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
         place.update(merged);
         placeRepository.flush(); // updatedAt을 응답에 바로 담으려고 여기서 반영해요
         return PlaceResponse.from(place);
@@ -171,6 +176,13 @@ public class PlaceService {
     /** GET /users/me의 보관함 카드 수 (BE 1이 씀). 교통·팁 포함 */
     public long countPlaces(Long userId) {
         return placeRepository.countByUser_UserId(userId);
+    }
+
+    /** 노드·플랜B·숙소 중 하나라도 이 카드를 쓰는지 */
+    private boolean isUsedInPlan(Long placeId) {
+        return !planNodeRepository.findAllByPlace_PlaceId(placeId).isEmpty()
+                || !planAlternativeRepository.findAllByPlace_PlaceId(placeId).isEmpty()
+                || !planStayRepository.findAllByPlace_PlaceId(placeId).isEmpty();
     }
 
     /** 남의 카드도 없는 카드와 같이 404로 (있다는 것도 알려주지 않음) */

@@ -1,6 +1,7 @@
 package com.reeltrip.domain.place.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reeltrip.domain.place.PlaceTestFixtures;
 import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.domain.place.entity.Place;
@@ -21,6 +23,8 @@ import com.reeltrip.domain.plan.entity.PlanRole;
 import com.reeltrip.domain.plan.repository.PlanRepository;
 import com.reeltrip.domain.user.entity.User;
 import com.reeltrip.domain.user.repository.UserRepository;
+import com.reeltrip.global.exception.BusinessException;
+import com.reeltrip.global.exception.ErrorCode;
 import com.reeltrip.support.TestFixtures;
 
 import jakarta.persistence.EntityManager;
@@ -35,6 +39,7 @@ class PlaceServiceTest {
     @Autowired PlanRepository planRepository;
     @Autowired UserRepository userRepository;
     @Autowired EntityManager em;
+    @Autowired ObjectMapper objectMapper;
 
     User me;
 
@@ -80,6 +85,34 @@ class PlaceServiceTest {
         assertThat(towerNode.getAlternatives()).isEmpty();
         assertThat(em.createQuery("select count(a) from PlanAlternative a", Long.class).getSingleResult()).isZero();
         assertThat(placeRepository.findById(cafe.getPlaceId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("계획에 쓰인 카드는 카테고리를 바꿀 수 없다.")
+    void modifyPlace_usedInPlan_categoryChange_invalid() throws Exception {
+        // given: 숙소로 고른 STAY 카드와 계획에 안 쓰인 맛집 카드
+        Place hotel = save(PlaceTestFixtures.placeAt(Category.STAY, "호텔", 33.59, 130.42));
+        Place unused = save(PlaceTestFixtures.placeAt(Category.FOOD, "라멘", 33.59, 130.42));
+        Plan plan = Plan.create(me, "후쿠오카", TestFixtures.date(11, 14), TestFixtures.date(11, 15),
+                "후쿠오카", null, null, null);
+        plan.addMember(me, PlanRole.OWNER);
+        plan.addStay(hotel);
+        planRepository.save(plan);
+        em.flush();
+
+        // when / then: 쓰인 카드의 카테고리를 바꾸면 실패
+        assertThatThrownBy(() -> placeService.modifyPlace(me.getUserId(), hotel.getPlaceId(),
+                objectMapper.readTree("{ \"category\": \"FOOD\" }")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.INVALID_INPUT);
+        // then: 같은 카테고리로 보내는 건 변경이 아니라 통과
+        assertThat(placeService.modifyPlace(me.getUserId(), hotel.getPlaceId(),
+                objectMapper.readTree("{ \"category\": \"STAY\", \"name\": \"호텔 본관\" }")).name())
+                .isEqualTo("호텔 본관");
+        // then: 계획에 안 쓰인 카드는 자유롭게 바꿀 수 있음
+        assertThat(placeService.modifyPlace(me.getUserId(), unused.getPlaceId(),
+                objectMapper.readTree("{ \"category\": \"CAFE\" }")).category())
+                .isEqualTo(Category.CAFE);
     }
 
     @Test
