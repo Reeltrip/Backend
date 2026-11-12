@@ -1,0 +1,9 @@
+# 배포(Cloud Run) 설정. 값은 모두 환경 변수(Secret Manager 연결)로 받아요.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
