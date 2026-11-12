@@ -3,6 +3,7 @@ package com.reeltrip.domain.place.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -46,6 +47,9 @@ import com.reeltrip.support.TestFixtures;
 @Transactional
 class PlaceControllerTest {
 
+    /** 소수 초 없는 서울 시각 */
+    private static final String SECONDS_DATE_TIME = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+09:00";
+
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired JwtProvider jwtProvider;
@@ -87,8 +91,8 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$.city").value("후쿠오카"))
                 .andExpect(jsonPath("$.latitude").value(33.5889))
                 .andExpect(jsonPath("$.keyPoints", contains("돈코츠 라멘")))
-                .andExpect(jsonPath("$.createdAt").exists())
-                .andExpect(jsonPath("$.updatedAt").exists());
+                .andExpect(jsonPath("$.createdAt").value(matchesPattern(SECONDS_DATE_TIME)))
+                .andExpect(jsonPath("$.updatedAt").value(matchesPattern(SECONDS_DATE_TIME)));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.reeltrip.domain.place.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import com.reeltrip.domain.place.entity.Category;
@@ -57,6 +58,8 @@ public record PlaceResponse(
     }
 
     private static OffsetDateTime toSeoul(LocalDateTime value) {
-        return value == null ? null : value.atZone(TimeConfig.SEOUL).toOffsetDateTime();
+        // 명세 형식("2026-11-14T10:24:00+09:00")에 맞춰 소수 초는 잘라요
+        return value == null ? null
+                : value.truncatedTo(ChronoUnit.SECONDS).atZone(TimeConfig.SEOUL).toOffsetDateTime();
     }
 }
