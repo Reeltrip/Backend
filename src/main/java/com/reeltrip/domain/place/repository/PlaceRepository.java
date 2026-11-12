@@ -23,4 +23,7 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     List<Place> findAllByUser_UserIdAndCityAndCategoryIn(Long userId, String city, Collection<Category> categories);
 
     List<Place> findAllByPlaceIdIn(Collection<Long> placeIds);
+
+    /** GET /places: 반경·카테고리 필터와 페이지 자르기는 서비스가 메모리에서 해요(해커톤 규모) */
+    List<Place> findAllByUser_UserIdOrderByCreatedAtDescPlaceIdDesc(Long userId);
 }
