@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "```json\n{\"city\": null, \"cards\": [{\"category\": \"CAFE\", \"name\": \"  커피 맨션  \", \"keyPoints\": [\"라테\", \"\", \"치즈케이크\", \"푸딩\", \"크루아상\"], \"priceText\": null, \"sourceTimestampSec\": \"1:23\", \"memo\": \"창가 자리는 오픈 직후에만 비어 있어요. 주말에는 대기 줄이 길어서 평일 오전 방문을 추천해요.\"}, {\"category\": \"SIGHTSEEING\", \"name\": \"오호리 공원 아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름아주 긴 이름\"}, {\"category\": \"TIP\", \"name\": \"환전은 시내 환전소에서\", \"subType\": \"환전\", \"keyPoints\": [\"무시해야 함\"], \"priceText\": \"무시해야 함\"}]}\n```"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 1200,
+    "candidatesTokenCount": 180,
+    "totalTokenCount": 1380
+  },
+  "modelVersion": "gemini-3-flash-preview"
+}

@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\n  \"city\": \"후쿠오카\",\n  \"cards\": [\n    {\n      \"category\": \"FOOD\",\n      \"name\": \"하카타 잇소\",\n      \"keyPoints\": [\n        \"돈코츠 라멘\"\n      ],\n      \"priceText\": \"¥960~980\",\n      \"accessText\": \"하카타역 동쪽 도보 약 6~7분\",\n      \"sourceTimestampSec\": 42,\n      \"memo\": null\n    },\n    {\n      \"category\": \"TRANSPORT\",\n      \"name\": \"지하철 1일권\",\n      \"subType\": \"교통패스\",\n      \"applicableRegion\": \"후쿠오카\",\n      \"cost\": \"640엔\",\n      \"benefit\": null,\n      \"method\": null,\n      \"placeText\": null,\n      \"caution\": null\n    }\n  ]\n}"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 1200,
+    "candidatesTokenCount": 180,
+    "totalTokenCount": 1380
+  },
+  "modelVersion": "gemini-3-flash-preview"
+}
