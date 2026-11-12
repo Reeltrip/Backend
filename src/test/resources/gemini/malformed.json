@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "죄송해요, 이 영상에서는 정보를 찾을 수 없어요."
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 1200,
+    "candidatesTokenCount": 180,
+    "totalTokenCount": 1380
+  },
+  "modelVersion": "gemini-3-flash-preview"
+}

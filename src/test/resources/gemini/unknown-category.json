@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\"city\": \"오사카\", \"cards\": [{\"category\": \"HOTEL\", \"name\": \"모르는 카테고리 카드\"}, {\"category\": \"food\", \"name\": \"소문자 카테고리 카드\"}, {\"category\": \"FOOD\", \"name\": \"   \"}, {\"category\": \"SHOPPING\", \"name\": null}, \"카드가 아닌 값\", {\"category\": \"SHOPPING\", \"name\": \"돈키호테 도톤보리점\", \"keyPoints\": [\"면세\"]}]}"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 1200,
+    "candidatesTokenCount": 180,
+    "totalTokenCount": 1380
+  },
+  "modelVersion": "gemini-3-flash-preview"
+}
