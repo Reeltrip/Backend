@@ -33,6 +33,16 @@ public enum ErrorCode {
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "경로 정보를 불러오지 못했어요"),
 
     // BE 2: 카드·계획
+    PLACE_NOT_FOUND(HttpStatus.NOT_FOUND, "카드를 찾을 수 없어요."), // (제안) 명세는 문구 미정
+    PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "계획을 찾을 수 없어요."), // (제안)
+    PLAN_DAY_NOT_FOUND(HttpStatus.NOT_FOUND, "일자를 찾을 수 없어요."), // (제안)
+    PLAN_FORBIDDEN(HttpStatus.FORBIDDEN, "이 계획을 볼 수 있는 권한이 없어요."),
+    INVALID_PLAN_PERIOD(HttpStatus.BAD_REQUEST, "여행 기간을 다시 확인해주세요"),
+    DUPLICATE_PLAN_PLACE(HttpStatus.CONFLICT, "이미 다른 일자에 넣은 장소예요."), // (제안)
+    // 교통·팁 카드를 노드·숙소·플랜B에, STAY가 아닌 카드를 숙소에, 다른 카테고리를 플랜B에 넣을 때
+    INVALID_PLAN_PLACE(HttpStatus.BAD_REQUEST, "계획에 넣을 수 없는 카드예요."), // (제안)
+    // LlmClient가 던져요. 링크별 실패 이유로 GET /sources/{sourceId}에 담겨 내려가요.
+    AI_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "링크에서 여행 정보를 찾지 못했어요."), // (제안)
     ;
 
     private final HttpStatus status;
