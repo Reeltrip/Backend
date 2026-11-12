@@ -1,0 +1,18 @@
+# 테스트 전용. build.gradle이 test 프로필을 켜요.
+spring:
+  datasource:
+    # user는 H2 예약어라 NON_KEYWORDS로 풀어서 엔티티의 테이블 이름 user를 그대로 써요.
+    url: jdbc:h2:mem:reeltrip;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  jwt:
+    # 테스트용 값. 실제 키가 아니에요.
+    secret: test-only-jwt-secret-key-for-reeltrip-0123456789
+  gemini:
+    api-key: test-key

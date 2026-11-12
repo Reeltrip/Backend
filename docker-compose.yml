@@ -1,0 +1,21 @@
+# 로컬 개발용 MySQL. 값은 .env에서 읽어요: docker compose --env-file .env up -d
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: reeltrip-mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_DATABASE: reeltrip
+      MYSQL_USER: ${DB_USERNAME:-reeltrip}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - reeltrip-mysql-data:/var/lib/mysql
+
+volumes:
+  reeltrip-mysql-data:
