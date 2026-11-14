@@ -7,7 +7,8 @@ CREATE TABLE `user` (
   `terms_agreed_at` DATETIME NOT NULL COMMENT '필수 약관 2개 동의 일시',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
-  PRIMARY KEY (`user_id`)
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `uk_user_email` UNIQUE (`email`)
 ) COMMENT='회원';
 
 CREATE TABLE `email_code` (
@@ -18,7 +19,8 @@ CREATE TABLE `email_code` (
   `is_verified` TINYINT(1) NOT NULL COMMENT '확인 완료 여부',
   `attempt_count` INT NOT NULL DEFAULT 0 COMMENT '틀린 입력 횟수 (5회면 무효)',
   `created_at` DATETIME NOT NULL COMMENT '발송 일시',
-  PRIMARY KEY (`email_code_id`)
+  PRIMARY KEY (`email_code_id`),
+  INDEX `idx_email_code_email_created` (`email`, `created_at`)
 ) COMMENT='이메일 인증번호';
 
 CREATE TABLE `password_reset_token` (
@@ -29,6 +31,7 @@ CREATE TABLE `password_reset_token` (
   `used_at` DATETIME NULL COMMENT '사용 일시',
   `created_at` DATETIME NOT NULL COMMENT '발급 일시',
   PRIMARY KEY (`password_reset_token_id`),
+  CONSTRAINT `uk_password_reset_token_token` UNIQUE (`token`),
   CONSTRAINT `FK_user_TO_password_reset_token_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='비밀번호 재설정 토큰';
 
@@ -39,6 +42,7 @@ CREATE TABLE `refresh_token` (
   `expires_at` DATETIME NOT NULL COMMENT '만료 일시',
   `created_at` DATETIME NOT NULL COMMENT '발급 일시',
   PRIMARY KEY (`refresh_token_id`),
+  CONSTRAINT `uk_refresh_token_token` UNIQUE (`token`),
   CONSTRAINT `FK_user_TO_refresh_token_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='리프레시 토큰';
 
