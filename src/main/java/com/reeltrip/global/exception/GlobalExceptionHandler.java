@@ -40,7 +40,8 @@ public class GlobalExceptionHandler {
             MultipartException.class
     })
     public ResponseEntity<ErrorResponse> handleInvalidInput(Exception e) {
-        log.debug("잘못된 요청: {}", e.getMessage());
+        // 검증 예외 메시지에는 거부한 비밀번호·토큰 값이 들어갈 수 있어요.
+        log.debug("잘못된 요청: {}", e.getClass().getSimpleName());
         return toResponse(ErrorCode.INVALID_INPUT);
     }
 

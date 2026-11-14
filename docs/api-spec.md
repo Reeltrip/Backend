@@ -51,6 +51,7 @@
 | `INVALID_INPUT` | 입력한 내용을 다시 확인해 주세요. (제안) | 공통 |
 | `INVALID_LOGIN` | 이메일 또는 비밀번호를 확인해주세요 | S0-1a |
 | `SOURCE_FETCH_FAILED` | 링크가 비공개이거나 지원하지 않는 형식일 수 있어요. | S1-3 |
+| `SOURCE_NOT_FOUND` | 수집 내역을 찾을 수 없어요. (제안) | S1-2, S1-3 |
 | `INVALID_PLAN_PERIOD` | 여행 기간을 다시 확인해주세요 | S4-1 |
 | `ROUTE_NOT_FOUND` | 경로 정보를 불러오지 못했어요 | S4-7a |
 | `PLAN_FORBIDDEN` | 이 계획을 볼 수 있는 권한이 없어요. | S4-8 |
@@ -256,6 +257,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 ```
 
 ## 링크 분석
+
+2026-11-14: 접수·저장 상태 조회 구현과 #23 분석 연결 경계는 [source-api.md](source-api.md)에 있어요. 현재 POST는 PENDING 저장까지 하며, 실제 백그라운드 분석은 #23에서 연결해요.
 
 ### GET `/sources?page=0&size=10`
 

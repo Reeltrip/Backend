@@ -2,6 +2,7 @@
 package com.reeltrip.domain.source.entity;
 
 import com.reeltrip.global.common.BaseTimeEntity;
+import com.reeltrip.global.exception.ErrorCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -61,6 +62,36 @@ public class SourceLink extends BaseTimeEntity {
 
     public static SourceLink create(Source source, String url, Platform platform) {
         return new SourceLink(source, url, platform);
+    }
+
+    public void markAnalyzing() {
+        if (status != AnalysisStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 링크만 분석을 시작할 수 있어요.");
+        }
+        status = AnalysisStatus.ANALYZING;
+    }
+
+    public void markDone(String draftJson) {
+        if (status != AnalysisStatus.ANALYZING) {
+            throw new IllegalStateException("분석 중인 링크만 완료할 수 있어요.");
+        }
+        if (draftJson == null || draftJson.isBlank()) {
+            throw new IllegalArgumentException("카드 초안 JSON이 필요해요.");
+        }
+        this.draftJson = draftJson;
+        failCode = null;
+        failMessage = null;
+        status = AnalysisStatus.DONE;
+    }
+
+    public void markFailed(ErrorCode errorCode) {
+        if (status == AnalysisStatus.DONE || status == AnalysisStatus.FAILED) {
+            throw new IllegalStateException("종료한 링크는 다시 변경할 수 없어요.");
+        }
+        failCode = errorCode.name();
+        failMessage = errorCode.getMessage();
+        draftJson = null;
+        status = AnalysisStatus.FAILED;
     }
 
     public Long getSourceLinkId() {
