@@ -32,6 +32,7 @@ public enum ErrorCode {
     SOURCE_FETCH_FAILED(HttpStatus.BAD_REQUEST, "링크가 비공개이거나 지원하지 않는 형식일 수 있어요."),
     SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "수집 내역을 찾을 수 없어요."), // (제안) 명세에 문구 없음
     IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지를 올리지 못했어요. 잠시 후 다시 시도해 주세요."), // 제안
+    PLACE_SEARCH_FAILED(HttpStatus.BAD_GATEWAY, "장소를 검색하지 못했어요. 잠시 후 다시 시도해 주세요."), // 제안
     SOURCE_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "분석을 완료하지 못했어요. 다시 시도해 주세요."), // 제안
     SOURCE_ANALYSIS_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "분석 시간이 지났어요. 다시 시도해 주세요."), // 제안
     SOURCE_ANALYSIS_BUSY(HttpStatus.SERVICE_UNAVAILABLE, "분석 요청이 많아요. 잠시 후 다시 시도해 주세요."), // 제안
