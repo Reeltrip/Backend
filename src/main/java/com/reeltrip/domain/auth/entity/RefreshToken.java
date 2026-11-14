@@ -58,6 +58,13 @@ public class RefreshToken {
         return !now.isBefore(expiresAt);
     }
 
+    public void rotateToken(String nextToken) {
+        if (nextToken == null || nextToken.isBlank()) {
+            throw new IllegalArgumentException("새 리프레시 토큰이 필요해요.");
+        }
+        token = nextToken;
+    }
+
     public Long getRefreshTokenId() { return refreshTokenId; }
     public User getUser() { return user; }
     public LocalDateTime getExpiresAt() { return expiresAt; }

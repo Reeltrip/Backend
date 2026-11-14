@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:8080
+
+### 로그인: 실제 DB의 BCrypt 계정 사용
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{"email":"traveler@example.test","password":"사용자 비밀번호"}
+
+### 재발급: Authorization 헤더 없이 호출하고 반환된 두 토큰을 모두 저장해요.
+# @name refresh
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{"refreshToken":"{{login.response.body.$.refreshToken}}"}
+
+### 새 액세스 토큰으로 카드 조회
+GET {{baseUrl}}/places
+Authorization: Bearer {{refresh.response.body.$.accessToken}}
+
+### 이전 리프레시 토큰을 다시 보내면 401
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{"refreshToken":"{{login.response.body.$.refreshToken}}"}

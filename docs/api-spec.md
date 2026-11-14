@@ -185,6 +185,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### POST `/auth/login`
 
+2026-11-14 실제 구현·토큰 회전·FE 호출 주의점은 [auth-login.md](auth-login.md)에 있어요. 메일 없이 기존 BCrypt 계정으로 로그인해요.
+
 ```json
 { "email": "traveler@email.com", "password": "********" }
 ```
@@ -194,6 +196,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 ### POST `/auth/refresh`
 
 `{ "refreshToken": "..." }` → `200 { "accessToken": "...", "refreshToken": "..." }`
+
+성공할 때 이전 리프레시 토큰을 교체하며, FE는 새 두 토큰을 함께 저장해요. 로그인 시 정한 리프레시 만료 시각은 연장하지 않아요.
 
 ### 비밀번호 찾기 흐름 (S0-1a)
 
