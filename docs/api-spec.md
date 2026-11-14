@@ -51,6 +51,7 @@
 | `INVALID_INPUT` | 입력한 내용을 다시 확인해 주세요. (제안) | 공통 |
 | `INVALID_LOGIN` | 이메일 또는 비밀번호를 확인해주세요 | S0-1a |
 | `SOURCE_FETCH_FAILED` | 링크가 비공개이거나 지원하지 않는 형식일 수 있어요. | S1-3 |
+| `SOURCE_NOT_FOUND` | 수집 내역을 찾을 수 없어요. (제안) | S1-2, S1-3 |
 | `INVALID_PLAN_PERIOD` | 여행 기간을 다시 확인해주세요 | S4-1 |
 | `ROUTE_NOT_FOUND` | 경로 정보를 불러오지 못했어요 | S4-7a |
 | `PLAN_FORBIDDEN` | 이 계획을 볼 수 있는 권한이 없어요. | S4-8 |
@@ -185,6 +186,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### POST `/auth/login`
 
+2026-11-14 실제 구현·토큰 회전·FE 호출 주의점은 [auth-login.md](auth-login.md)에 있어요. 메일 없이 기존 BCrypt 계정으로 로그인해요.
+
 ```json
 { "email": "traveler@email.com", "password": "********" }
 ```
@@ -194,6 +197,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 ### POST `/auth/refresh`
 
 `{ "refreshToken": "..." }` → `200 { "accessToken": "...", "refreshToken": "..." }`
+
+성공할 때 이전 리프레시 토큰을 교체하며, FE는 새 두 토큰을 함께 저장해요. 로그인 시 정한 리프레시 만료 시각은 연장하지 않아요.
 
 ### 비밀번호 찾기 흐름 (S0-1a)
 
@@ -251,11 +256,15 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### GET `/users/me`
 
+인증한 회원만 조회해요. 카드 수에는 교통·팁도 포함하고, 계획 수에는 OWNER·EDITOR·VIEWER로 참여한 계획을 모두 포함해요. DB에 회원이 없으면 `401 UNAUTHORIZED`, 응답은 캐시하지 않아요.
+
 ```json
 { "userId": 1, "email": "traveler@email.com", "nickname": "보영", "placeCount": 27, "planCount": 3 }
 ```
 
 ## 링크 분석
+
+2026-11-14: 접수·저장 상태 조회 구현과 #23 분석 연결 경계는 [source-api.md](source-api.md)에 있어요. 현재 POST는 PENDING 저장까지 하며, 실제 백그라운드 분석은 #23에서 연결해요.
 
 ### GET `/sources?page=0&size=10`
 

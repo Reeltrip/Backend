@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:8080
+@accessToken = 실제_액세스_JWT
+
+### 링크 접수: 실제 분석 리스너는 #23에서 연결해요.
+# @name receipt
+POST {{baseUrl}}/sources
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"urls":["https://youtu.be/demo?t=42","https://www.instagram.com/reel/demo"]}
+
+### 접수한 요청의 저장 상태 조회
+GET {{baseUrl}}/sources/{{receipt.response.body.$.sourceId}}
+Authorization: Bearer {{accessToken}}
+
+### 잘못된 URL은 전체 요청을 저장하지 않고 400
+POST {{baseUrl}}/sources
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{"urls":["https://youtu.be/demo","invalid-url"]}
+
+### 없는 source와 다른 회원 source는 같은 404
+GET {{baseUrl}}/sources/9223372036854775807
+Authorization: Bearer {{accessToken}}

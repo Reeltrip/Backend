@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,9 +23,10 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * 로컬(local 프로필)에서만 열리는 테스트 로그인. 회원가입·로그인 API(BE 1)가 생기기 전에
  * 로컬에서 BE 2 API를 직접 불러 보려고 둬요. prod에는 이 빈이 아예 없어요.
- * TODO: BE 1 로그인 API가 생기면 삭제
+ * 실제 로그인 구현 후에는 명시적으로 켠 local 환경에서만 유지해요.
  */
-@Profile("local")
+@Profile("local & !prod")
+@ConditionalOnProperty(name = "app.auth.dev-login.enabled", havingValue = "true")
 @RestController
 public class LocalDevLoginController {
 

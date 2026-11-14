@@ -30,6 +30,7 @@ public enum ErrorCode {
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호를 확인해주세요"),
     // 링크별 실패 이유로 GET /sources/{sourceId}에 담겨 내려가요.
     SOURCE_FETCH_FAILED(HttpStatus.BAD_REQUEST, "링크가 비공개이거나 지원하지 않는 형식일 수 있어요."),
+    SOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "수집 내역을 찾을 수 없어요."), // (제안) 명세에 문구 없음
     ROUTE_NOT_FOUND(HttpStatus.NOT_FOUND, "경로 정보를 불러오지 못했어요"),
 
     // BE 2: 카드·계획
