@@ -82,7 +82,19 @@ public class HtmlContentExtractor {
         String frame = nodes.stream().filter(node -> Set.of("iframe", "frame").contains(node.tag))
                 .filter(node -> "mainFrame".equalsIgnoreCase(node.attr("id")))
                 .map(node -> node.attr("src")).filter(value -> !value.isBlank()).findFirst().orElse(null);
-        return new Extracted(text, thumbnail, frame);
+        return new Extracted(text, thumbnail, frame, meta(nodes, "og:description", "twitter:description"), meta(nodes, "og:url"));
+    }
+
+    private static String meta(List<Node> nodes, String... names) {
+        for (String name : names) {
+            String value = nodes.stream().filter(node -> node.tag.equals("meta"))
+                    .filter(node -> name.equalsIgnoreCase(node.attr("property")) || name.equalsIgnoreCase(node.attr("name")))
+                    .map(node -> node.attr("content")).filter(content -> !content.isBlank()).findFirst().orElse(null);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private static int rank(Node node, boolean naver) {
@@ -253,7 +265,7 @@ public class HtmlContentExtractor {
         return html.length();
     }
 
-    record Extracted(String text, String thumbnail, String mainFrame) {
+    record Extracted(String text, String thumbnail, String mainFrame, String description, String canonical) {
     }
 
     private static final class Node {
