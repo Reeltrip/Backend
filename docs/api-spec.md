@@ -347,6 +347,8 @@ FE가 몇 초마다 부릅니다.
 
 ### 링크 종류별 내용 가져오기
 
+2026-11-14: #18의 플랫폼 판별·유튜브 입력·oEmbed 수집 경계와 호출 제한은 [fetcher-youtube.md](fetcher-youtube.md)에 있어요. 일반·쇼츠·youtu.be를 FetchedContent(text=null)로 기존 LlmClient에 넘길 수 있으며, source 작업 실행 연결은 #23에서 해요. 인스타·블로그 수집기는 #19·#20에서 추가해요.
+
 | 종류 | 방법 | 상태 |
 | --- | --- | --- |
 | 유튜브(쇼츠 포함) | Gemini API에 영상 주소를 그대로 넘김. 자막을 따로 뽑지 않고, 장소가 나오는 시점(`sourceTimestampSec`)도 같이 받음 | 시험 필요: 영상 길이·하루 사용량 한도 |
