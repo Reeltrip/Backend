@@ -2,6 +2,7 @@ package com.reeltrip.domain.place.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -25,16 +26,36 @@ public class PlaceValidator {
 
     /** hasSourceLink: AI가 만든 카드인지. 그때만 sourceUrl이 필수예요. */
     public void validate(PlaceContent content, boolean hasSourceLink) {
-        Category category = content.category();
-        require(category != null);
-        require(hasText(content.name()) && fits(content.name(), MAX_NAME_LENGTH));
+        validateFormat(content, hasSourceLink);
+        require(missingRequiredFields(content).isEmpty());
+    }
 
-        if (category.isPlace()) {
-            require(hasText(content.imageUrl()) && hasText(content.address()));
-            require(content.latitude() != null && content.longitude() != null);
-        } else {
-            require(hasText(content.subType()) && hasText(content.applicableRegion()));
+    /**
+     * 카테고리별 필수 항목 중 빈 것을 JSON 필드 이름으로 돌려줘요. 장소 카드는 사진·주소·좌표, 교통·팁은 세부유형·적용지역.
+     * AI 카드는 Places 보강을 못 하면 이 값들이 비어 있을 수 있어요 (S2-1). 카테고리가 없으면 빈 목록.
+     */
+    public List<String> missingRequiredFields(PlaceContent content) {
+        List<String> missing = new ArrayList<>();
+        Category category = content.category();
+        if (category == null) {
+            return missing;
         }
+        if (category.isPlace()) {
+            addIfMissing(missing, "imageUrl", hasText(content.imageUrl()));
+            addIfMissing(missing, "address", hasText(content.address()));
+            addIfMissing(missing, "latitude", content.latitude() != null);
+            addIfMissing(missing, "longitude", content.longitude() != null);
+        } else {
+            addIfMissing(missing, "subType", hasText(content.subType()));
+            addIfMissing(missing, "applicableRegion", hasText(content.applicableRegion()));
+        }
+        return missing;
+    }
+
+    /** 필수 항목이 비었는지는 빼고 카테고리·이름·길이·범위만 검사해요. */
+    public void validateFormat(PlaceContent content, boolean hasSourceLink) {
+        require(content.category() != null);
+        require(hasText(content.name()) && fits(content.name(), MAX_NAME_LENGTH));
         require(content.latitude() == null || isValidLatitude(content.latitude().doubleValue()));
         require(content.longitude() == null || isValidLongitude(content.longitude().doubleValue()));
         if (hasSourceLink) {
@@ -75,6 +96,12 @@ public class PlaceValidator {
 
     private static boolean isValidLongitude(double longitude) {
         return longitude >= -180 && longitude <= 180;
+    }
+
+    private static void addIfMissing(List<String> missing, String field, boolean present) {
+        if (!present) {
+            missing.add(field);
+        }
     }
 
     private static boolean hasText(String value) {

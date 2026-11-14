@@ -466,7 +466,7 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
 }
 ```
 
-- 장소 카드 필수: `imageUrl`, `category`, `name`, `address`, `latitude`, `longitude`. `sourceUrl`은 AI가 만든 카드에서만 필수.
+- 장소 카드 필수: `imageUrl`, `category`, `name`, `address`, `latitude`, `longitude`. `sourceUrl`은 AI가 만든 카드에서만 필수. AI 카드의 필수 항목이 비면 아래 `skipped` 규칙을 따릅니다.
 - `keyPoints`는 최대 3개. 서버에서도 검사합니다.
 - `priceText`, `memo`는 50자까지(디자인 직접 추가 화면). `reviewCount`, `openingHours`, `accessText`는 없으면 `null`.
 - 교통·팁 카드는 아래 항목을 씁니다. 값이 없으면 `null`.
@@ -486,7 +486,22 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
 }
 ```
 
-`201 { "places": [ { "placeId": 101, "name": "하카타 잇소", "category": "FOOD" } ] }`
+`201`
+
+```json
+{
+  "places": [ { "placeId": 101, "name": "하카타 잇소", "category": "FOOD" } ],
+  "skipped": [
+    { "index": 1, "sourceLinkId": 31, "name": "이름만 나온 가게", "missingFields": ["imageUrl", "address", "latitude", "longitude"] }
+  ]
+}
+```
+
+- **빈 항목이 있는 AI 카드는 빼고 저장합니다 (2026-11-14, FE 공유 필요).** `sourceLinkId`가 있는 카드 중 필수 항목(장소: `imageUrl`·`address`·`latitude`·`longitude`, 교통·팁: `subType`·`applicableRegion`)이 빈 카드는 저장하지 않고 `skipped`에 넣습니다. 나머지 카드는 저장합니다. Places 보강을 못 한 카드 때문에 "모두 저장" 전체가 실패하지 않게 하기 위해서입니다.
+  - `index`는 요청 `places` 안의 순서(0부터), `missingFields`는 빈 항목의 필드 이름입니다. FE는 이 카드들을 화면에 남겨 빈 항목을 채운 뒤 다시 저장하게 할 수 있습니다.
+  - 모든 카드가 빠지면 `201`에 `places: []`와 `skipped`가 옵니다. 뺄 카드가 없으면 `skipped: []`입니다.
+- 직접 추가한 카드(`sourceLinkId` 없음, S3-3)는 필수 항목이 비면 지금처럼 `400 INVALID_INPUT`입니다.
+- 형식 오류(카테고리 없음, 이름·가격·메모 길이, `keyPoints` 4개 이상, 좌표 범위, 남의 `sourceLinkId` 등)는 AI 카드여도 요청 전체가 `400`이고 한 장도 저장하지 않습니다.
 
 ### GET `/places?category=FOOD&page=0&size=20&sortType=LATEST`
 
