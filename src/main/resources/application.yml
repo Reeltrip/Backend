@@ -29,6 +29,9 @@ management:
         include: health
 
 app:
+  analysis:
+    enabled: ${ANALYSIS_ENABLED:true}
+    link-timeout: PT90S
   maps:
     # 사용자 결정: 저장 정책·계약 예외 확인 전 영구 보강은 끈 상태로 유지해요.
     persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:false}

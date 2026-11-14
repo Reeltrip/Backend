@@ -38,15 +38,17 @@ public class SourceService {
     private final SourceUrlParser urlParser;
     private final ObjectMapper mapper;
     private final ApplicationEventPublisher events;
+    private final AnalysisStateService analysis;
 
     public SourceService(SourceRepository sources, SourceLinkRepository links, UserRepository users,
-                         SourceUrlParser urlParser, ObjectMapper mapper, ApplicationEventPublisher events) {
+                         SourceUrlParser urlParser, ObjectMapper mapper, ApplicationEventPublisher events, AnalysisStateService analysis) {
         this.sources = sources;
         this.links = links;
         this.users = users;
         this.urlParser = urlParser;
         this.mapper = mapper;
         this.events = events;
+        this.analysis = analysis;
     }
 
     @Transactional
@@ -60,8 +62,9 @@ public class SourceService {
         return new SourceCreateResponse(source.getSourceId(), AnalysisStatus.PENDING);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public SourceDetailResponse getSource(Long userId, Long sourceId) {
+        analysis.recover(sourceId,userId);
         Source source = sources.findBySourceIdAndUser_UserId(sourceId, userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SOURCE_NOT_FOUND));
         var responses = links.findAllBySource_SourceIdOrderBySourceLinkIdAsc(sourceId).stream()
