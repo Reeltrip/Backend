@@ -50,7 +50,7 @@
 - 플랜B(`plan_alternative`)는 대신할 노드가 지워지면 같이 지웁니다.
 - 공유: `plan.share_type`(`READ_ONLY`·`EDIT`, `NULL`이면 꺼짐). 공유 주소는 `/plan/{planId}`. 공유를 켠 계획만 비회원이 읽기 가능.
 - `user`는 H2 등 일부 DB에서 예약어입니다. 테스트 DB를 H2로 쓰면 엔티티에서 테이블 이름 처리가 필요합니다.
-- 스키마 생성 방식(`ddl-auto`·마이그레이션 도구)은 정해지지 않았습니다 → 시작할 때 사용자에게 묻기.
+- 2026-11-14 사용자 결정: 기존 SQL 파일로 수동 적용하고 prod의 `ddl-auto=validate`를 유지해요. Flyway·새 의존성은 추가하지 않아요. 적용·검증 절차는 [auth-persistence.md](auth-persistence.md)에 있어요.
 
 ## 서버에서 검사할 규칙 (BE 2)
 
@@ -104,3 +104,7 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - #8의 FE 가짜 API는 `src/mock` / `com.reeltripmock`에 두고 `bootMockRun`으로 따로 실행해요. 기존 운영 패키지 `com.reeltrip`은 유지하고 운영 JAR에는 가짜 서버를 포함하지 않아요.
 - 기존 `FakeLlmClient`로 장소·교통 카드 예시를 만들어요. 새 라이브러리·DB 테이블·운영 API 변경은 없어요.
 - FE 합의 대기 항목과 실행·호출 방법은 [api-mock.md](api-mock.md)에 있어요. 가짜 동작을 실제 인증·메일·링크 분석의 구현 완료로 보지 않아요.
+
+## 2026-11-14 메일 발송 의존성
+
+- 사용자 선택으로 `spring-boot-starter-mail` 추가는 보류해요. #10 실제 메일 전송 방식은 이 결정이 바뀌거나 다른 방식이 정해진 뒤 연결해요.
