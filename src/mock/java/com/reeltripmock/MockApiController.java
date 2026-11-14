@@ -216,4 +216,3 @@ class MockApiController {
     record ResetConfirmRequest(@NotBlank String token, @NotBlank String newPassword) { }
     record SourceRequest(@NotEmpty @Size(max = 5) List<@NotBlank String> urls) { }
 }
-

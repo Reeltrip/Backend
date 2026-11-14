@@ -117,4 +117,3 @@ X-Mock-Error: DUPLICATE_EMAIL
 ```
 
 `verifyMockIsolation`은 운영 bootJar를 열어 com/reeltripmock 클래스·가짜 이미지·가짜 설정이 없는지 확인해요. 계약 테스트는 15개 API와 인증 실패·부분 실패·입력 오류·DB/실제 Gemini 미생성을 확인해요.
-
