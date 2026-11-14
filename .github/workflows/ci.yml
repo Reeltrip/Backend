@@ -24,5 +24,7 @@ jobs:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Test and verify production jar
         run: bash ./gradlew --no-daemon test bootJar verifyMockIsolation
+      - name: Verify deployment gates without cloud access
+        run: bash scripts/test-deploy.sh
       - name: Build runtime image
         run: docker build --tag reeltrip-ci:${GITHUB_SHA} .
