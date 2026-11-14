@@ -21,6 +21,11 @@ import com.reeltrip.global.exception.ErrorCode;
  */
 @Service
 public class PlanAccessService {
+    /** 기존 계획 읽기와 같이 등록된 멤버에게 노드·플랜B·숙소 카드의 좌표 읽기를 허용해요. */
+    @Transactional(readOnly=true)
+    public boolean canReadPlace(Long userId,Long placeId) {
+        return planMemberRepository.readablePlaceReferences(userId,placeId)>0;
+    }
 
     private final PlanRepository planRepository;
     private final PlanMemberRepository planMemberRepository;
