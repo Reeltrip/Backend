@@ -8,7 +8,7 @@
 | --- | --- |
 | email_code | 숫자 6자리, 발송 후 5분, 오입력 횟수·확인 여부·발송 시각 |
 | password_reset_token | 원문 대신 SHA-256 해시, 30분, used_at으로 1회 사용 |
-| refresh_token | 회원별 토큰·만료 시각, 토큰 유니크, 회원별 일괄 폐기 |
+| refresh_token | 회원별 토큰·만료 시각, 토큰 유니크, 회원별 일괄 폐기. #12 실제 발급 값은 원문 대신 SHA-256 해시 |
 | user | 기존 이메일 유니크와 엔티티를 유지 |
 
 인증 테이블에는 created_at만 있으므로 updated_at이 있는 BaseTimeEntity를 상속하지 않아요. 인증 시각은 서비스가 주입받은 Clock으로 계산해 팩토리·상태 변경 메서드에 넘겨요.

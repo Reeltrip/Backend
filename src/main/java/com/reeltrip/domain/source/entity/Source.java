@@ -50,6 +50,38 @@ public class Source extends BaseTimeEntity {
         return new Source(user);
     }
 
+    public void markAnalyzing() {
+        requireOpen();
+        status = AnalysisStatus.ANALYZING;
+    }
+
+    public void markDone(String title) {
+        if (status != AnalysisStatus.ANALYZING) {
+            throw new IllegalStateException("분석 중인 요청만 완료할 수 있어요.");
+        }
+        assignTitle(title);
+        status = AnalysisStatus.DONE;
+    }
+
+    public void markFailed(String title) {
+        requireOpen();
+        assignTitle(title);
+        status = AnalysisStatus.FAILED;
+    }
+
+    private void requireOpen() {
+        if (status == AnalysisStatus.DONE || status == AnalysisStatus.FAILED) {
+            throw new IllegalStateException("종료한 분석 요청은 다시 변경할 수 없어요.");
+        }
+    }
+
+    private void assignTitle(String title) {
+        if (title == null || title.isBlank() || title.length() > 50) {
+            throw new IllegalArgumentException("수집 제목은 1~50자여야 해요.");
+        }
+        this.title = title;
+    }
+
     public Long getSourceId() {
         return sourceId;
     }

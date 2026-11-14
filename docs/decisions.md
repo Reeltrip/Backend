@@ -112,3 +112,10 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 ## 2026-11-14 #19 본문 수집 의존성
 
 - 사용자가 `org.jsoup:jsoup:1.24.1`, `org.apache.httpcomponents.client5:httpclient5` 추가를 보류했어요. #19는 새 의존성 없이 JDK의 정적 HTML 파서와 소켓/TLS를 사용해요. 지원 범위·호출 제한·실제 공개 링크 확인 결과는 [fetcher-web.md](fetcher-web.md)에 기록해요.
+
+## 2026-11-14 #12 로그인·재발급 우선 구현
+
+- 사용자 요청으로 메일은 계속 보류하고 #12를 먼저 구현해요. 새 의존성은 없어요.
+- 기존 BCrypt·JWT·Clock과 인증 DB를 재사용해요. refresh 원문은 무작위 32바이트, DB 값은 SHA-256 해시예요. 기존 컬럼을 유지해요.
+- 재발급은 행 잠금 안에서 이전 해시를 교체하고 로그인 때 정한 14일 만료는 연장하지 않아요. 같은 토큰의 동시 요청은 하나만 성공하고, 교체된 이전 토큰의 재사용은 거부해요.
+- 개발용 로그인은 local + 명시적 opt-in에서만 유지하고 prod에서는 비활성화해요. 호출 방식과 FE 확인 사항은 [auth-login.md](auth-login.md)에 있어요.
