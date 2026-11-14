@@ -97,3 +97,10 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다.
 - 새 에러 코드: `AI_DRAFT_NO_PLACES`(400), `AI_DRAFT_FAILED`(500). 문구는 (제안).
 - `GEMINI_API_KEY`가 없으면 링크 분석과 같이 prod는 실패, 그 밖은 가짜 초안(경도 순으로 나누기)을 씁니다.
+
+## 2026-11-14 BE1 개발 방식과 #8 가짜 API
+
+- 사용자 요청으로 #8부터 순서대로 개발하며, 각 이슈에 연결한 `feature/#이슈번호-작업내용` 브랜치를 사용해요. PR도 해당 feature 브랜치에서 main을 대상으로 만들고 다른 BE의 검토를 기다려요.
+- #8의 FE 가짜 API는 `src/mock` / `com.reeltripmock`에 두고 `bootMockRun`으로 따로 실행해요. 기존 운영 패키지 `com.reeltrip`은 유지하고 운영 JAR에는 가짜 서버를 포함하지 않아요.
+- 기존 `FakeLlmClient`로 장소·교통 카드 예시를 만들어요. 새 라이브러리·DB 테이블·운영 API 변경은 없어요.
+- FE 합의 대기 항목과 실행·호출 방법은 [api-mock.md](api-mock.md)에 있어요. 가짜 동작을 실제 인증·메일·링크 분석의 구현 완료로 보지 않아요.

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -33,7 +35,9 @@ public class GlobalExceptionHandler {
             ConstraintViolationException.class,
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class,
-            MissingServletRequestParameterException.class
+            MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
+            MultipartException.class
     })
     public ResponseEntity<ErrorResponse> handleInvalidInput(Exception e) {
         log.debug("잘못된 요청: {}", e.getMessage());

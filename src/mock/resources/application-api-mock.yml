@@ -1,0 +1,7 @@
+# 가짜 서버에서만 읽어요. 파일은 저장하지 않고 형식만 확인해요.
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+

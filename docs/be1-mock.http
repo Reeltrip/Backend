@@ -1,0 +1,113 @@
+@baseUrl = http://localhost:8081
+@accessToken = mock-access-token
+
+### 1. 인증번호 발송
+POST {{baseUrl}}/auth/email-codes
+Content-Type: application/json
+
+{"email":"demo@example.test"}
+
+### 2. 인증번호 확인
+POST {{baseUrl}}/auth/email-codes/verify
+Content-Type: application/json
+
+{"email":"demo@example.test","code":"123456"}
+
+### 3. 가입
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{"email":"demo@example.test","password":"Mockpass123","nickname":"테스트","isTermsAgreed":true,"isPrivacyAgreed":true,"isMarketingAgreed":false}
+
+### 4. 로그인
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{"email":"demo@example.test","password":"Mockpass123"}
+
+### 5. refresh
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{"refreshToken":"mock-refresh-token"}
+
+### 6. 재설정 메일
+POST {{baseUrl}}/auth/password-reset
+Content-Type: application/json
+
+{"email":"demo@example.test"}
+
+### 7. 재설정 링크 확인
+POST {{baseUrl}}/auth/password-reset/verify
+Content-Type: application/json
+
+{"token":"mock-reset-token"}
+
+### 8. 새 비밀번호
+POST {{baseUrl}}/auth/password-reset/confirm
+Content-Type: application/json
+
+{"token":"mock-reset-token","newPassword":"Newpass123"}
+
+### 9. 내 정보
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{accessToken}}
+
+### 10. 최근 수집
+GET {{baseUrl}}/sources?page=0&size=10
+Authorization: Bearer {{accessToken}}
+
+### 11. 일부 실패 분석 접수 (반환된 sourceId로 상세 조회)
+POST {{baseUrl}}/sources
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+X-Mock-Scenario: partial
+
+{"urls":["https://www.youtube.com/shorts/mock-success","https://www.instagram.com/reel/mock-failure"]}
+
+### 12. 일부 실패 고정 예시
+GET {{baseUrl}}/sources/2
+Authorization: Bearer {{accessToken}}
+
+### 13. 가짜 사진 업로드 (메타데이터만 확인하며 실제 이미지를 저장하지 않음)
+POST {{baseUrl}}/images
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=mock-boundary
+
+--mock-boundary
+Content-Disposition: form-data; name="file"; filename="place.png"
+Content-Type: image/png
+
+mock-image-bytes
+--mock-boundary--
+
+### 14. 장소 검색
+GET {{baseUrl}}/place-search?query=후쿠오카
+Authorization: Bearer {{accessToken}}
+
+### 15. 경로 (시간대의 +는 %2B로 인코딩)
+GET {{baseUrl}}/routes?from=1&to=2&departAt=2026-11-14T10%3A00%3A00%2B09%3A00
+Authorization: Bearer {{accessToken}}
+
+### 409 중복 가입
+POST {{baseUrl}}/auth/email-codes
+Content-Type: application/json
+X-Mock-Error: DUPLICATE_EMAIL
+
+{"email":"demo@example.test"}
+
+### 400 만료
+POST {{baseUrl}}/auth/email-codes/verify
+Content-Type: application/json
+X-Mock-Error: EMAIL_CODE_EXPIRED
+
+{"email":"demo@example.test","code":"123456"}
+
+### 404 경로 없음
+GET {{baseUrl}}/routes?from=1&to=2
+Authorization: Bearer {{accessToken}}
+X-Mock-Error: ROUTE_NOT_FOUND
+
+### 미인증
+GET {{baseUrl}}/users/me
+
