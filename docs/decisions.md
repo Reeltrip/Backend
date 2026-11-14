@@ -71,7 +71,13 @@
 
 ## 기술 스택 (Notion 기술 스택 페이지와 같음)
 
-Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Security + JWT + BCrypt, JUnit 5 + Mockito, `@Async` 백그라운드 작업, GCP Cloud Run(서울). Swagger(springdoc-openapi)는 제안 상태라 의존성 추가 전에 묻습니다.
+Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Security + JWT + BCrypt, JUnit 5 + Mockito, `@Async` 백그라운드 작업, GCP Cloud Run(서울). Swagger(springdoc-openapi)는 2026-11-14 사용자 결정으로 추가했습니다(아래 "Swagger 연결").
+
+## 2026-11-14 Swagger 연결 (BE 2)
+
+- 사용자(BE 2) 결정으로 `springdoc-openapi-starter-webmvc-ui` 2.8.17(Spring Boot 3.5용)을 추가했어요. 로컬·배포 모두 켜고, 끌 때는 환경 변수 `SWAGGER_ENABLED=false`예요.
+- 주소: `/swagger-ui/index.html`(화면), `/v3/api-docs`(OpenAPI JSON). "Authorize"에 액세스 토큰을 넣으면 모든 요청에 `Bearer`로 붙어요.
+- BE 1 영역을 두 군데 고쳤어요(BE 1 검토 필요): `SecurityConfig`에 Swagger 경로 로그인 없이 열기 한 줄, `global/config/OpenApiConfig` 추가(Bearer 인증 방식, `@LoginUser` 회원 id는 문서 파라미터에서 숨김).
 
 ## 2026-11-12 BE 2 작업 시작 때 정한 것
 

@@ -13,7 +13,8 @@
 | 항목 | 규칙 |
 | --- | --- |
 | 주소 | 명사 복수형, 소문자, 하이픈. 접두사(`/api` 등)는 문서에 없어 붙이지 않았습니다 |
-| 인증 | `Authorization: Bearer {accessToken}`. `/auth/**`, 읽기 전용 공유 계획 조회, `/actuator/health`만 로그인 없이 열림 |
+| 인증 | `Authorization: Bearer {accessToken}`. `/auth/**`, 읽기 전용 공유 계획 조회, `/actuator/health`, Swagger 문서만 로그인 없이 열림 |
+| Swagger | `/swagger-ui/index.html`(화면), `/v3/api-docs`(OpenAPI JSON). "Authorize"에 액세스 토큰을 넣으면 그대로 호출해 볼 수 있음. 로컬·배포 모두 켜져 있고 `SWAGGER_ENABLED=false`면 꺼짐 (2026-11-14) |
 | 필드 | 카멜 케이스. PK는 `placeId`처럼 도메인명을 붙임. 목록은 `places`, `plans`처럼 `{도메인명}s` |
 | Enum | `.name()` 값 그대로: `"category": "FOOD"`, `"status": "DRAFT"` |
 | 페이지 | `page`(0부터), `size`, `sortType` |

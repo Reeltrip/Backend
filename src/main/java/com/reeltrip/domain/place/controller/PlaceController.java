@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.reeltrip.domain.place.dto.PlaceCardRequest;
 import com.reeltrip.domain.place.dto.PlaceCreateRequest;
 import com.reeltrip.domain.place.dto.PlaceCreateResponse;
 import com.reeltrip.domain.place.dto.PlaceListRequest;
@@ -22,6 +23,8 @@ import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.domain.place.service.PlaceService;
 import com.reeltrip.global.security.LoginUser;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 
 /** POST/GET /places, GET/PATCH/DELETE /places/{placeId}. 소유: place 팀원 */
@@ -64,6 +67,9 @@ public class PlaceController {
     /** S2-2·S3-2 카드 수정. 들어온 필드만 바꾸고, null로 온 필드는 비워요. */
     @PatchMapping("/places/{placeId}")
     public PlaceResponse modifyPlace(@LoginUser Long userId, @PathVariable Long placeId,
+                                     // 보낸 필드만 바꾸려고 JsonNode로 받지만, 문서에는 카드 형식으로 보여줘요.
+                                     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+                                             schema = @Schema(implementation = PlaceCardRequest.class)))
                                      @RequestBody JsonNode body) {
         return placeService.modifyPlace(userId, placeId, body);
     }

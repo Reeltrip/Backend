@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Swagger UI·OpenAPI 문서 (2026-11-14 BE 2 추가, SWAGGER_ENABLED=false면 경로 자체가 없음)
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // 읽기 전용 공유 계획 조회. 공유가 켜졌는지는 서비스에서 확인해요.
                         .requestMatchers(HttpMethod.GET, "/plans/*").permitAll()
                         .requestMatchers("/error").permitAll()
