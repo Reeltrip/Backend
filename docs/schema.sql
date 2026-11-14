@@ -54,6 +54,7 @@ CREATE TABLE `source` (
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   PRIMARY KEY (`source_id`),
+  INDEX `idx_source_user_created` (`user_id`, `created_at`),
   CONSTRAINT `FK_user_TO_source_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='링크 분석 요청';
 
