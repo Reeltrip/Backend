@@ -17,7 +17,21 @@ repositories {
     mavenCentral()
 }
 
+// FE 가짜 서버는 운영 클래스/JAR와 분리해요.
+sourceSets {
+    mock {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    mockImplementation.extendsFrom implementation
+    mockRuntimeOnly.extendsFrom runtimeOnly
+}
+
 dependencies {
+    testImplementation sourceSets.mock.output
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -38,4 +52,30 @@ tasks.named('test') {
     useJUnitPlatform()
     // 테스트는 항상 H2(test 프로필)로 돌려요. 로컬 MySQL이 없어도 통과해야 해요.
     systemProperty 'spring.profiles.active', 'test'
+}
+
+tasks.register('bootMockRun', JavaExec) {
+    group = 'application'
+    description = 'DB와 외부 API 없이 BE1 가짜 응답 서버를 실행해요.'
+    dependsOn tasks.named('mockClasses')
+    classpath = sourceSets.mock.runtimeClasspath
+    mainClass = 'com.reeltripmock.ApiMockApplication'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    args '--server.port=8081'
+}
+
+tasks.register('verifyMockIsolation') {
+    group = 'verification'
+    description = '운영 JAR에 가짜 API와 예시 리소스가 없는지 확인해요.'
+    dependsOn tasks.named('bootJar')
+    doLast {
+        def mockEntries = zipTree(tasks.named('bootJar').get().archiveFile.get().asFile).matching {
+            include 'BOOT-INF/classes/com/reeltripmock/**'
+            include 'BOOT-INF/classes/static/mock/**'
+            include 'BOOT-INF/classes/application-api-mock.yml'
+        }
+        if (!mockEntries.isEmpty()) {
+            throw new GradleException('운영 JAR에 가짜 API 파일이 포함됐어요.')
+        }
+    }
 }
