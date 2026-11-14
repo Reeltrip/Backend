@@ -108,3 +108,7 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 ## 2026-11-14 메일 발송 의존성
 
 - 사용자 선택으로 `spring-boot-starter-mail` 추가는 보류해요. #10 실제 메일 전송 방식은 이 결정이 바뀌거나 다른 방식이 정해진 뒤 연결해요.
+
+## 2026-11-14 #19 본문 수집 의존성
+
+- 사용자가 `org.jsoup:jsoup:1.24.1`, `org.apache.httpcomponents.client5:httpclient5` 추가를 보류했어요. #19는 새 의존성 없이 JDK의 정적 HTML 파서와 소켓/TLS를 사용해요. 지원 범위·호출 제한·실제 공개 링크 확인 결과는 [fetcher-web.md](fetcher-web.md)에 기록해요.
