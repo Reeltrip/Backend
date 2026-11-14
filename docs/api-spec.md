@@ -255,6 +255,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### GET `/users/me`
 
+인증한 회원만 조회해요. 카드 수에는 교통·팁도 포함하고, 계획 수에는 OWNER·EDITOR·VIEWER로 참여한 계획을 모두 포함해요. DB에 회원이 없으면 `401 UNAUTHORIZED`, 응답은 캐시하지 않아요.
+
 ```json
 { "userId": 1, "email": "traveler@email.com", "nickname": "보영", "placeCount": 27, "planCount": 3 }
 ```
