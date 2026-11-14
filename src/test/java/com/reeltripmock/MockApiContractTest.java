@@ -200,4 +200,3 @@ class MockApiContractTest {
         return request.header("Authorization", "Bearer mock-access-token");
     }
 }
-

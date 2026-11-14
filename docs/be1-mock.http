@@ -110,4 +110,3 @@ X-Mock-Error: ROUTE_NOT_FOUND
 
 ### 미인증
 GET {{baseUrl}}/users/me
-

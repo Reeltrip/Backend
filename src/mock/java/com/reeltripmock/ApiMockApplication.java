@@ -39,4 +39,3 @@ public class ApiMockApplication {
         application.run(args);
     }
 }
-

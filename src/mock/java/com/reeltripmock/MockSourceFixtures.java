@@ -107,4 +107,3 @@ class MockSourceFixtures {
 
     private record Fixture(List<String> urls, String scenario) { }
 }
-

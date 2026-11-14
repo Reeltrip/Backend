@@ -44,4 +44,3 @@ class MockScenarioConfig implements WebMvcConfigurer {
         }).excludePathPatterns("/mock/**", "/actuator/**");
     }
 }
-
