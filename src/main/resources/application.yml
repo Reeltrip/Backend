@@ -1,5 +1,9 @@
 # 공통 설정. 프로필별 값은 application-local.yml / application-prod.yml
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   application:
     name: reeltrip
   profiles:
