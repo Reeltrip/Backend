@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,12 +54,15 @@ class SourceHistoryApiTest {
     @Autowired EntityManager em;
     @Autowired JwtProvider jwt;
     @MockitoBean LlmClient llm;
+    @MockitoBean Clock clock;
 
     User owner;
     User other;
 
     @BeforeEach
     void setUp() {
+        when(clock.getZone()).thenReturn(ZoneId.of("Asia/Seoul"));
+        when(clock.instant()).thenReturn(CREATED.atZone(ZoneId.of("Asia/Seoul")).toInstant());
         owner = users.save(TestFixtures.user("history-owner@example.test"));
         other = users.save(TestFixtures.user("history-other@example.test"));
     }
@@ -196,9 +202,10 @@ class SourceHistoryApiTest {
     }
 
     private long saved(User user, LocalDateTime createdAt, AnalysisStatus status, String title) {
+        // 실제 저장과 같은 JPA auditing으로 CI(UTC)·로컬(서울)에서 같은 시각을 준비해요.
+        when(clock.instant()).thenReturn(createdAt.atZone(ZoneId.of("Asia/Seoul")).toInstant());
         long id = sources.saveAndFlush(Source.create(user)).getSourceId();
-        jdbc.update("update source set created_at = ?, status = ?, title = ? where source_id = ?",
-                createdAt, status.name(), title, id);
+        jdbc.update("update source set status = ?, title = ? where source_id = ?", status.name(), title, id);
         em.clear();
         return id;
     }

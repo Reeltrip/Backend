@@ -3,7 +3,10 @@ package com.reeltrip.domain.source;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.UUID;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,20 +47,21 @@ class SourceHistoryHttpMySqlTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired JwtProvider jwt;
     @MockitoBean LlmClient llm;
+    @MockitoBean Clock clock;
 
     @Test
     @DisplayName("실제 HTTP·MySQL에서 수집 목록의 동률 정렬·페이지·서울 시각과 권한·입력 오류를 확인한다.")
     void listsRecentSourcesThroughLiveHttp() {
         // given: 외부 분석 없이 저장된 수집 내역을 준비해요.
+        var createdAt = LocalDateTime.of(2026, 11, 14, 10, 24);
+        when(clock.getZone()).thenReturn(ZoneId.of("Asia/Seoul"));
+        when(clock.instant()).thenReturn(createdAt.atZone(ZoneId.of("Asia/Seoul")).toInstant());
         var owner = users.save(TestFixtures.user(UUID.randomUUID() + "@example.test"));
         var other = users.save(TestFixtures.user(UUID.randomUUID() + "@example.test"));
         long first = sources.save(Source.create(owner)).getSourceId();
         long second = sources.save(Source.create(owner)).getSourceId();
         sources.save(Source.create(other));
-        var createdAt = LocalDateTime.of(2026, 11, 14, 10, 24);
-        jdbc.update("update source set created_at = ?, title = ?, status = 'DONE' where source_id = ?",
-                createdAt, "오사카 여행", first);
-        jdbc.update("update source set created_at = ? where source_id = ?", createdAt, second);
+        jdbc.update("update source set title = ?, status = 'DONE' where source_id = ?", "오사카 여행", first);
         var headers = new HttpHeaders();
         headers.setBearerAuth(jwt.createAccessToken(owner.getUserId()));
         // when
