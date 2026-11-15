@@ -63,6 +63,28 @@ class SwaggerConfigTest {
         }
 
         @Test
+        @DisplayName("API 묶음 이름은 한국어로 보이고 인증부터 공유까지 화면 흐름 순서로 나온다.")
+        void apiDocs_koreanTagsInFlowOrder() throws Exception {
+            mockMvc.perform(get("/v3/api-docs"))
+                    .andExpect(jsonPath("$.tags[0].name").value("인증"))
+                    .andExpect(jsonPath("$.tags[*].name", hasItem("AI 초안")))
+                    .andExpect(jsonPath("$.tags[*].name", not(hasItem("plan-draft-controller"))))
+                    .andExpect(jsonPath("$.paths['/plans/{planId}/ai-drafts'].post.tags[0]").value("AI 초안"));
+        }
+
+        @Test
+        @DisplayName("API마다 한국어 요약과 설명이 붙고, 주소·쿼리 값에도 한국어 설명이 보인다.")
+        void apiDocs_koreanSummaries() throws Exception {
+            mockMvc.perform(get("/v3/api-docs"))
+                    .andExpect(jsonPath("$.paths['/plans/{planId}/ai-drafts'].post.summary").value("AI 초안 만들기"))
+                    .andExpect(jsonPath("$.paths['/plans/{planId}/ai-drafts'].post.description")
+                            .value(org.hamcrest.Matchers.containsString("숙소")))
+                    .andExpect(jsonPath("$.paths['/places'].post.summary").value("카드 저장 (여러 장)"))
+                    .andExpect(jsonPath("$.paths['/plans'].get.parameters[?(@.name == 'owner')].description",
+                            hasItem(org.hamcrest.Matchers.containsString("shared"))));
+        }
+
+        @Test
         @DisplayName("로그인 없이 Swagger UI 화면을 열 수 있다.")
         void swaggerUi_withoutLogin_ok() throws Exception {
             mockMvc.perform(get("/swagger-ui/index.html"))

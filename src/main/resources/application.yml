@@ -25,7 +25,6 @@ springdoc:
   swagger-ui:
     enabled: ${SWAGGER_ENABLED:true}
     persist-authorization: true
-    tags-sorter: alpha
 
 management:
   endpoints:
