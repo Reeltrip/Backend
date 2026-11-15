@@ -160,3 +160,11 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 메일 서버 상태가 `/actuator/health`를 DOWN으로 만들지 않게 mail health는 꺼요.
 - 비밀번호 재설정 메일(#14)은 이번 범위가 아니에요.
 
+## 2026-11-16 BE1 남은 인증·수집 목록 보완
+
+- 사용자 공유와 main의 PR #64를 확인해 #10·#11·#13의 메일·가입 보류가 해제된 상태를 기준으로 #14를 진행해요. 기존 SMTP·Secret·수동 인증 스키마를 재사용해요.
+- 재설정 요청은 계정 유무의 시간·응답 차이를 줄이도록 별도 유한 큐에 접수해 빈200을 반환해요. SMTP·대기열 실패도 같은 응답이고 주소·원문 토큰·비밀번호는 로그에 남기지 않아요.
+- 기존 FE 경로 `/password-reset?token=`을 SHARE_BASE_URL에 붙여요. 새 환경 변수 없이 prod는 공개 HTTPS FE 주소를 요구해요. FE 화면 연동과 실메일 재설정은 병합 후 확인해야 해요.
+- 회원→토큰 순서로 로그인·refresh·재설정을 잠가요. 비밀번호 변경·일회 소비·모든 본인 refresh 폐기를 원자적으로 처리해요. 기존 access JWT의 최대30분 만료 정책은 유지해요.
+- #17 PR #36은 최신 main을 병합해 충돌을 해소하고 독립적으로 검증해요. 운영 health·가입 Swagger는 확인했지만 GET /sources는 아직 없어 다른 BE 리뷰·병합·자동 배포가 필요해요.
+

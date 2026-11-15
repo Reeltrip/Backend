@@ -59,7 +59,8 @@ public class AuthService {
         if (request.password().getBytes(StandardCharsets.UTF_8).length > 72) {
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
-        User user = users.findByEmail(request.email()).orElse(null);
+        // 재설정과 같은 회원 행을 먼저 잠가 이전 비밀번호로 refresh가 뒤늦게 발급되지 않게 해요.
+        User user = users.findByEmailForUpdate(request.email()).orElse(null);
         String encodedPassword = user == null ? dummyPasswordHash : user.getPassword();
         boolean matches = passwordEncoder.matches(request.password(), encodedPassword);
         if (user == null || !matches) {
@@ -71,7 +72,7 @@ public class AuthService {
     /** S0-1b 가입. 인증을 마친 이메일만 가입하고 바로 로그인 토큰을 줘요. */
     @Transactional
     public LoginResponse signUp(SignupRequest request) {
-        if (!isValidPassword(request.password())) {
+        if (!PasswordPolicy.isValid(request.password())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD_FORMAT);
         }
         emailCodeService.requireVerified(request.email());
@@ -91,14 +92,6 @@ public class AuthService {
         return issueTokens(user);
     }
 
-    /** 영문·숫자 포함 8자 이상. BCrypt는 72바이트까지만 보므로 그 이상은 막아요. */
-    private static boolean isValidPassword(String password) {
-        return password.getBytes(StandardCharsets.UTF_8).length <= 72
-                && password.length() >= 8
-                && password.chars().anyMatch(c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-                && password.chars().anyMatch(c -> c >= '0' && c <= '9');
-    }
-
     private LoginResponse issueTokens(User user) {
         LocalDateTime now = LocalDateTime.now(clock);
         String rawRefreshToken = tokenCodec.generate();
@@ -113,6 +106,10 @@ public class AuthService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         String digest = tokenCodec.hash(rawRefreshToken);
+        Long userId = refreshTokens.userIdByToken(digest)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        users.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        // 회원→토큰 순서로 잠가 재설정의 전체 refresh 폐기와 교착되지 않게 해요.
         RefreshToken stored = refreshTokens.findByTokenForUpdate(digest)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         if (stored.isExpired(LocalDateTime.now(clock))) {

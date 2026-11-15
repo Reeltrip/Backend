@@ -13,6 +13,19 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 @EnableAsync
 public class AsyncConfig {
 
+    @Bean(name = "passwordResetExecutor")
+    public Executor passwordResetExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(32);
+        executor.setThreadNamePrefix("password-reset-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(10);
+        executor.initialize();
+        return executor;
+    }
+
     public static final String ANALYSIS_EXECUTOR = "analysisExecutor";
 
     @Bean(name = ANALYSIS_EXECUTOR)

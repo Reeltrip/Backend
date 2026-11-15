@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 import com.reeltrip.domain.auth.entity.RefreshToken;
@@ -19,5 +20,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("select refresh from RefreshToken refresh where refresh.token = :token")
     Optional<RefreshToken> findByTokenForUpdate(@Param("token") String token);
 
-    void deleteAllByUserUserId(Long userId);
+    // 현재 값을 직접 삭제해 MySQL의 이전 조회 스냅샷 뒤 발급된 refresh도 폐기해요.
+    @Modifying(flushAutomatically = true)
+    @Query("delete from RefreshToken refresh where refresh.user.userId = :userId")
+    void deleteAllByUserUserId(@Param("userId") Long userId);
+
+    @Query("select refresh.user.userId from RefreshToken refresh where refresh.token = :token")
+    Optional<Long> userIdByToken(@Param("token") String token);
 }

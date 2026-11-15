@@ -47,6 +47,7 @@ public class OpenApiConfig {
         SpringDocUtils.getConfig().addAnnotationsToIgnore(LoginUser.class);
 
         tag("auth-controller", "인증", "로그인과 토큰 재발급 (S0-1a). 로그인 없이 불러요.");
+        tag("password-reset-controller", "비밀번호 재설정", "메일 링크로 새 비밀번호를 정해요 (S0-1a). 로그인 없이 불러요.");
         tag("local-dev-login-controller", "개발용 로그인",
                 "로컬 전용이에요(local 프로필 + DEV_LOGIN_ENABLED=true). 배포 서버에는 없어요.");
         tag("user-controller", "회원", "내 정보 (S0-2)");
@@ -64,6 +65,12 @@ public class OpenApiConfig {
 
     /** "메서드 주소" → [요약, 설명] */
     private static final Map<String, String[]> OPERATIONS = Map.ofEntries(
+            op("POST /auth/password-reset", "비밀번호 재설정 링크 요청",
+                    "이메일을 받아 메일 작업을 접수해요. 가입 여부·60초 내 재요청·발송 실패·대기열 포화와 관계없이 빈 200이에요. 링크는 30분 유효해요."),
+            op("POST /auth/password-reset/verify", "재설정 링크 확인",
+                    "본문 token을 받아 maskedEmail·expiresAt을 줘요. 확인만으로 소비하지 않아요. INVALID_RESET_TOKEN·RESET_TOKEN_EXPIRED로 실패해요."),
+            op("POST /auth/password-reset/confirm", "새 비밀번호 저장",
+                    "본문 token·newPassword를 받아 BCrypt 변경·링크 1회 소비·모든 refresh 폐기를 함께 처리해요. 성공204이며 자동 로그인하지 않아요."),
             op("POST /auth/email-codes", "가입 인증번호 받기",
                     "6자리 번호를 메일로 보내요. 5분 동안 유효하고 60초 뒤부터 다시 받을 수 있어요. 이미 가입된 이메일은 DUPLICATE_EMAIL, 60초 안 재요청은 EMAIL_CODE_TOO_FREQUENT예요. (S0-1b)"),
             op("POST /auth/email-codes/verify", "가입 인증번호 확인",
