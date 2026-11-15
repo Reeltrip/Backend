@@ -1,5 +1,9 @@
 # 공통 설정. 프로필별 값은 application-local.yml / application-prod.yml
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   application:
     name: reeltrip
   profiles:
@@ -10,6 +14,18 @@ spring:
       hibernate:
         jdbc:
           time_zone: Asia/Seoul
+  # 가입 인증번호 메일(#10). 기본은 Gmail SMTP, 계정·앱 비밀번호는 환경 변수(배포는 Secret Manager)로만 받아요.
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   jackson:
     time-zone: Asia/Seoul
     serialization:
@@ -18,13 +34,35 @@ spring:
 server:
   port: ${PORT:8080}
 
+# Swagger UI: /swagger-ui/index.html, 문서: /v3/api-docs. 로컬·배포 모두 켜고, 끌 때는 SWAGGER_ENABLED=false
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+    persist-authorization: true
+
 management:
+  # 메일 서버 접속 여부로 서버 health가 DOWN이 되지 않게 해요(배포 검사가 health만 봐요).
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
         include: health
 
 app:
+  analysis:
+    enabled: ${ANALYSIS_ENABLED:true}
+    link-timeout: PT90S
+  maps:
+    # 2026-11-15 BE 2 결정: AI는 주소·좌표를 만들지 않아서, 보강을 끄면 링크로 만든 장소 카드를 저장할 수 없어요.
+    # 기본은 켜고, Google 정책 문제로 꺼야 하면 MAPS_PERSIST_ENRICHMENT=false (docs/places-enrichment.md).
+    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:true}
+  auth:
+    dev-login:
+      enabled: ${DEV_LOGIN_ENABLED:false}
   jwt:
     secret: ${JWT_SECRET}
     access-token-minutes: 30

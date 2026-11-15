@@ -37,6 +37,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // S0-1b 가입 인증번호 메일 (Gmail SMTP, #10)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    // Swagger UI(/swagger-ui/index.html)와 OpenAPI 문서(/v3/api-docs). 2.8.x가 Spring Boot 3.5용
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
     implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'

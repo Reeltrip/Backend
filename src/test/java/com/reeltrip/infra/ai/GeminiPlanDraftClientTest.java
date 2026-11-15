@@ -70,6 +70,21 @@ class GeminiPlanDraftClientTest {
     }
 
     @Test
+    @DisplayName("사용자가 정해 둔 숙소가 있으면 그 숙소 id를 정해진 숙소로 AI에 알려 준다.")
+    void buildRequestBody_fixedStays() throws Exception {
+        // given: 10번 호텔을 이미 숙소로 정한 계획
+        PlanDraftRequest fixed = new PlanDraftRequest("오사카", 1, request.candidates(), List.of(10L));
+        // when
+        String body = client.buildRequestBody(fixed);
+        // then: 사용자 입력 JSON에 fixedStayPlaceIds가 들어감
+        String userText = objectMapper.readTree(body).path("contents").path(0).path("parts").path(0)
+                .path("text").asText();
+        var input = objectMapper.readTree(userText.substring(userText.indexOf('{')));
+        assertThat(input.path("fixedStayPlaceIds").isArray()).isTrue();
+        assertThat(input.path("fixedStayPlaceIds").get(0).asLong()).isEqualTo(10L);
+    }
+
+    @Test
     @DisplayName("형식이 깨진 응답이 오면 한 번만 다시 불러 성공한 초안을 돌려준다.")
     void draftPlan_retryOnceOnMalformed() throws Exception {
         // given: 첫 응답은 JSON이 아님, 두 번째는 정상

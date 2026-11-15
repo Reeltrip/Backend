@@ -6,6 +6,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -41,6 +42,7 @@ public class JwtProvider {
     public String createAccessToken(Long userId) {
         Date now = Date.from(clock.instant());
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(Date.from(now.toInstant().plus(accessTokenTtl)))
@@ -51,14 +53,18 @@ public class JwtProvider {
     /** 서명이 맞고 만료되지 않았으면 userId, 아니면 빈 값. */
     public Optional<Long> parseUserId(String token) {
         try {
-            String subject = Jwts.parser()
+            var claims = Jwts.parser()
                     .verifyWith(key)
                     .clock(() -> Date.from(clock.instant()))
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .getSubject();
-            return Optional.of(Long.valueOf(subject));
+                    .getPayload();
+            // JJWT의 경계 비교와 별개로 만료 시각부터는 사용하지 못하게 해요.
+            if (claims.getExpiration() == null || !claims.getExpiration().toInstant().isAfter(clock.instant())) {
+                return Optional.empty();
+            }
+            long userId = Long.parseLong(claims.getSubject());
+            return userId > 0 ? Optional.of(userId) : Optional.empty();
         } catch (JwtException | IllegalArgumentException e) {
             return Optional.empty();
         }

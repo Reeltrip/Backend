@@ -83,7 +83,7 @@ class PlanDraftServiceTest {
     }
 
     @Test
-    @DisplayName("AI 초안을 만들면 숙소와 일자별 노드가 AI가 정한 순서대로 채워지고 계획은 작성 중으로 남는다.")
+    @DisplayName("AI 초안을 만들면 숙소와 일자별 노드가 AI가 정한 순서대로 채워지고 모든 일자가 완성된 작성 완료 계획이 된다.")
     void createAiDraft_fillsStaysAndNodes() throws Exception {
         // given: AI가 1일차 [관광지, 맛집], 2일차 [카페], 숙소 [호텔]로 짬
         given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
@@ -94,13 +94,37 @@ class PlanDraftServiceTest {
         mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
                 // then: 응답은 계획 보기와 같은 모양
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()))
                 .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(sight.getPlaceId()))
                 .andExpect(jsonPath("$.days[0].nodes[0].orderIndex").value(0))
                 .andExpect(jsonPath("$.days[0].nodes[1].placeId").value(food.getPlaceId()))
                 .andExpect(jsonPath("$.days[1].nodes[0].placeId").value(cafe.getPlaceId()))
-                .andExpect(jsonPath("$.days[0].isCompleted").value(false));
+                .andExpect(jsonPath("$.days[0].isCompleted").value(true))
+                .andExpect(jsonPath("$.days[1].isCompleted").value(true));
+    }
+
+    @Test
+    @DisplayName("AI 초안으로 작성 완료된 계획도 일자를 미완성으로 고치면 다시 작성 중이 된다.")
+    void createAiDraft_thenEditDayIncomplete_backToDraft() throws Exception {
+        // given: AI 초안으로 작성 완료된 계획
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(), List.of(List.of(food.getPlaceId()), List.of(cafe.getPlaceId()))));
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+
+        // when: 1일차를 미완성으로 저장
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/plans/{planId}/days/1", plan.getPlanId()).header("Authorization", token(owner))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"nodes\":[{\"placeId\":" + food.getPlaceId() + ",\"alternativePlaceIds\":[]}],"
+                                + "\"isCompleted\":false}"))
+                .andExpect(status().isOk());
+
+        // then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/plans/{planId}", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
     }
 
     @Test
@@ -140,8 +164,68 @@ class PlanDraftServiceTest {
                 .andExpect(jsonPath("$.days[0].nodes.length()").value(1))
                 .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(cafe.getPlaceId()))
                 .andExpect(jsonPath("$.days[1].nodes[1].placeId").value(sight.getPlaceId()))
-                .andExpect(jsonPath("$.days[0].isCompleted").value(false))
+                .andExpect(jsonPath("$.days[0].isCompleted").value(true))
                 .andExpect(jsonPath("$.stays.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("계획에 숙소를 이미 정해 두었으면 AI 초안은 그 숙소를 그대로 두고 AI가 고른 숙소로 바꾸지 않는다.")
+    void createAiDraft_keepsChosenStays() throws Exception {
+        // given: 예약한 호텔(stay)을 숙소로 정해 둔 계획, 보관함에는 다른 호텔도 있음
+        Place otherStay = placeRepository.save(PlanEditFixtures.place(owner, Category.STAY, "다른 호텔"));
+        plan.addStay(stay);
+        em.flush();
+        // AI가 다른 호텔을 숙소로 골라 돌려줌
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(otherStay.getPlaceId()),
+                List.of(List.of(sight.getPlaceId()), List.of(food.getPlaceId()))));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk())
+                // then: 숙소는 정해 둔 호텔 하나 그대로, 동선은 AI 초안
+                .andExpect(jsonPath("$.stays.length()").value(1))
+                .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()))
+                .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(sight.getPlaceId()));
+    }
+
+    @Test
+    @DisplayName("숙소를 정해 두었으면 AI에는 그 숙소만 숙소 후보로 넘기고 정해진 숙소라고 알려 준다.")
+    void createAiDraft_chosenStays_sentAsFixed() throws Exception {
+        // given: 숙소로 정해 둔 호텔(stay)과 보관함의 다른 호텔
+        Place otherStay = placeRepository.save(PlanEditFixtures.place(owner, Category.STAY, "다른 호텔"));
+        plan.addStay(stay);
+        em.flush();
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(List.of(), List.of(List.of(), List.of())));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk());
+
+        // then
+        var captor = org.mockito.ArgumentCaptor.forClass(PlanDraftRequest.class);
+        verify(planDraftClient).draftPlan(captor.capture());
+        assertThat(captor.getValue().fixedStayPlaceIds()).containsExactly(stay.getPlaceId());
+        assertThat(captor.getValue().candidates()).extracting(PlanDraftRequest.Candidate::placeId)
+                .contains(stay.getPlaceId(), food.getPlaceId())
+                .doesNotContain(otherStay.getPlaceId());
+    }
+
+    @Test
+    @DisplayName("숙소를 정하지 않았으면 AI가 보관함 숙소 카드 중에서 골라 숙소로 넣는다.")
+    void createAiDraft_noChosenStays_aiPicks() throws Exception {
+        // given: 숙소가 비어 있는 계획
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(stay.getPlaceId()), List.of(List.of(food.getPlaceId()), List.of())));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk())
+                // then
+                .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()));
+        var captor = org.mockito.ArgumentCaptor.forClass(PlanDraftRequest.class);
+        verify(planDraftClient).draftPlan(captor.capture());
+        assertThat(captor.getValue().fixedStayPlaceIds()).isEmpty();
     }
 
     @Test

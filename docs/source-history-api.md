@@ -32,13 +32,13 @@ Authorization: Bearer {accessToken}
 - 토큰이 없거나 토큰 회원이 DB에 없으면 401 UNAUTHORIZED예요.
 - userId 쿼리로 다른 회원을 선택할 수 없어요. 응답에는 링크 원문·초안·다른 회원 정보가 없어요.
 - 성공 응답에 Cache-Control: no-store를 넣어요.
-- 인증 토큰을 준비한 뒤 [source-history-api.http](source-history-api.http)로 호출할 수 있어요. 실제 로그인은 별도 #12 PR, 접수·상세는 별도 #16 PR에서 제공해요.
+- 실제 로그인 토큰을 준비한 뒤 [source-history-api.http](source-history-api.http)로 호출할 수 있어요. 로그인·접수·상세는 이미 main에 있어요.
 
 ## 수동 SQL
 
 기존 Source 엔티티에는 idx_source_user_created(user_id, created_at)가 선언돼 있지만 docs/schema.sql에는 빠져 있어 추가했어요. 새 DB는 갱신된 schema.sql을 적용해요.
 
-기존 DB는 먼저 `SHOW INDEX FROM source;`로 같은 인덱스가 있는지 확인하고, 없을 때만 [002-source-history-index.sql](sql/002-source-history-index.sql)을 한 번 적용해요. 테이블·컬럼·데이터는 변경하지 않으며 Flyway를 추가하지 않아요. 운영 DB에 자동 적용하지 않아요.
+기존 DB는 먼저 `SHOW INDEX FROM source;`로 같은 인덱스가 있는지 확인하고, 없을 때만 [004-source-history-index.sql](sql/004-source-history-index.sql)을 한 번 적용해요. main의 002·003 SQL과 번호가 겹치지 않도록 바꿨어요. 테이블·컬럼·데이터는 변경하지 않으며 Flyway를 추가하지 않아요. 운영 DB에 자동 적용하지 않아요.
 
 ## 검증
 
@@ -47,9 +47,9 @@ SourceHistoryApiTest는 본인 필터, 네 상태·nullable 제목, 서울 시�
 SourceHistoryHttpMySqlTest는 일회용 로컬 MySQL 8.0에서 실제 HTTP로 페이지·동률 정렬·권한·입력 오류와 수동 인덱스를 확인해요. 다음 환경 변수가 없으면 이 MySQL 테스트만 건너뛰어요. 테스트는 localhost의 지정 DB·일회용 root·빈 비밀번호만 사용해요.
 
 ```powershell
-# 일회용 DB에 갱신된 schema.sql 또는 기존 스키마 + 002 인덱스 SQL을 적용해요.
+# 일회용 DB에 갱신된 schema.sql 또는 기존 스키마 + 004 인덱스 SQL을 적용해요.
 $env:REELTRIP_HISTORY_MYSQL_URL='jdbc:mysql://127.0.0.1:포트/reeltrip_issue17?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false'
 .\gradlew.bat test verifyMockIsolation
 ```
 
-새 의존성·운영 환경 변수는 없어요. #17 브랜치는 main에서 분리했으며 #16의 접수·상세 API와 URL이 겹치지 않아요. #16을 합치면 생성한 수집을 이 목록에서 확인할 수 있어요. 실제 분석 실행은 #23에서 연결해요.
+새 의존성·운영 환경 변수는 없어요. 2026-11-16 최신 main을 반영했고 기존 접수·상세·비동기 분석의 소유권 검사와 잠금 메서드를 함께 유지해요. 운영 health와 Swagger를 읽어 가입 API는 있고 GET /sources는 아직 없는 것을 확인했어요. PR #36의 다른 BE 리뷰·병합 뒤 기존 자동 배포를 통해 반영해요.

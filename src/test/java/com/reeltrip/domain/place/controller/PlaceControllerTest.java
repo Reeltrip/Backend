@@ -106,7 +106,7 @@ class PlaceControllerTest {
     }
 
     @Test
-    @DisplayName("여러 장 중 한 장이라도 장소 카드 필수 항목이 비면 400으로 실패하고 한 장도 저장되지 않는다.")
+    @DisplayName("직접 추가한 카드는 한 장이라도 장소 카드 필수 항목이 비면 400으로 실패하고 한 장도 저장되지 않는다.")
     void createPlaces_oneMissingAddress_noneSaved() throws Exception {
         // given: 두 번째 카드에 주소가 없음
         Map<String, Object> bad = PlaceTestFixtures.foodCard("주소 없는 카드");
@@ -195,6 +195,76 @@ class PlaceControllerTest {
         postPlaces(List.of(card))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    // S2-1 "모두 저장": Places 보강을 못 한 AI 카드만 빼고 나머지는 저장해요 (decisions 2026-11-14).
+
+    @Test
+    @DisplayName("AI 카드 중 주소·사진이나 적용지역이 빈 카드는 빼고 나머지만 저장하며, 뺀 카드의 순서와 빈 항목을 알려준다.")
+    void createPlaces_aiCardsMissingFields_skippedAndRestSaved() throws Exception {
+        // given: 다 채운 AI 카드, 주소·사진이 빈 AI 카드, 적용지역이 빈 AI 교통 카드
+        SourceLink link = saveSourceLink(me);
+        Map<String, Object> full = aiCard(PlaceTestFixtures.foodCard("다 채운 카드"), link);
+        Map<String, Object> noAddress = aiCard(PlaceTestFixtures.foodCard("주소 없는 카드"), link);
+        noAddress.remove("address");
+        noAddress.remove("imageUrl");
+        Map<String, Object> noRegion = aiCard(PlaceTestFixtures.transportCard("지역 없는 패스"), link);
+        noRegion.remove("applicableRegion");
+        // when / then
+        postPlaces(List.of(full, noAddress, noRegion))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.places", hasSize(1)))
+                .andExpect(jsonPath("$.places[0].name").value("다 채운 카드"))
+                .andExpect(jsonPath("$.skipped", hasSize(2)))
+                .andExpect(jsonPath("$.skipped[0].index").value(1))
+                .andExpect(jsonPath("$.skipped[0].sourceLinkId").value(link.getSourceLinkId()))
+                .andExpect(jsonPath("$.skipped[0].name").value("주소 없는 카드"))
+                .andExpect(jsonPath("$.skipped[0].missingFields", contains("imageUrl", "address")))
+                .andExpect(jsonPath("$.skipped[1].index").value(2))
+                .andExpect(jsonPath("$.skipped[1].missingFields", contains("applicableRegion")));
+        assertThat(placeRepository.countByUser_UserId(me.getUserId())).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("AI 카드가 모두 좌표가 비었으면 한 장도 저장하지 않고 201과 빈 목록, 뺀 카드 목록을 돌려준다.")
+    void createPlaces_allAiCardsMissingCoordinates_noneSaved() throws Exception {
+        // given: 좌표가 빈 AI 카드 두 장
+        SourceLink link = saveSourceLink(me);
+        Map<String, Object> first = aiCard(PlaceTestFixtures.foodCard("좌표 없는 카드1"), link);
+        first.remove("latitude");
+        first.remove("longitude");
+        Map<String, Object> second = aiCard(PlaceTestFixtures.foodCard("좌표 없는 카드2"), link);
+        second.remove("longitude");
+        // when / then
+        postPlaces(List.of(first, second))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.places", hasSize(0)))
+                .andExpect(jsonPath("$.skipped[0].missingFields", contains("latitude", "longitude")))
+                .andExpect(jsonPath("$.skipped[1].missingFields", contains("longitude")));
+        assertThat(placeRepository.countByUser_UserId(me.getUserId())).isZero();
+    }
+
+    @Test
+    @DisplayName("빈 항목이 있는 AI 카드라도 글자 수 초과 같은 형식 오류가 있으면 400으로 실패하고 한 장도 저장되지 않는다.")
+    void createPlaces_aiCardMissingAndTooLong_noneSaved() throws Exception {
+        // given: 다 채운 카드 + 주소가 비고 가격이 51자인 카드
+        SourceLink link = saveSourceLink(me);
+        Map<String, Object> bad = aiCard(PlaceTestFixtures.foodCard("형식 오류 카드"), link);
+        bad.remove("address");
+        bad.put("priceText", "가".repeat(51));
+        // when / then
+        postPlaces(List.of(aiCard(PlaceTestFixtures.foodCard("정상 카드"), link), bad))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+        assertThat(placeRepository.countByUser_UserId(me.getUserId())).isZero();
+    }
+
+    @Test
+    @DisplayName("빼야 할 카드가 없으면 skipped는 빈 목록이다.")
+    void createPlaces_nothingSkipped_emptySkipped() throws Exception {
+        postPlaces(List.of(PlaceTestFixtures.foodCard("정상 카드")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.skipped", hasSize(0)));
     }
 
     @Test
@@ -402,6 +472,13 @@ class PlaceControllerTest {
         Source source = sourceRepository.save(Source.create(owner));
         return sourceLinkRepository.save(
                 SourceLink.create(source, "https://www.youtube.com/shorts/test", Platform.YOUTUBE));
+    }
+
+    /** 분석 링크에서 나온 카드로 바꿔요. FE는 GET /sources 초안의 sourceLinkId·sourceUrl을 그대로 보내요. */
+    private static Map<String, Object> aiCard(Map<String, Object> card, SourceLink link) {
+        card.put("sourceLinkId", link.getSourceLinkId());
+        card.put("sourceUrl", link.getUrl());
+        return card;
     }
 
     private static String bearer(String token) {

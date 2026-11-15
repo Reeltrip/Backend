@@ -117,6 +117,7 @@ erDiagram
         text caution "교통·팁 주의"
         datetime created_at "생성 일시"
         datetime updated_at "수정 일시"
+        datetime deleted_at "휴지통으로 옮긴 일시 (NULL이면 보관함)"
     }
 
     place_key_point {

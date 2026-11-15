@@ -71,7 +71,14 @@
 
 ## 기술 스택 (Notion 기술 스택 페이지와 같음)
 
-Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Security + JWT + BCrypt, JUnit 5 + Mockito, `@Async` 백그라운드 작업, GCP Cloud Run(서울). Swagger(springdoc-openapi)는 제안 상태라 의존성 추가 전에 묻습니다.
+Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Security + JWT + BCrypt, JUnit 5 + Mockito, `@Async` 백그라운드 작업, GCP Cloud Run(서울). Swagger(springdoc-openapi)는 2026-11-14 사용자 결정으로 추가했습니다(아래 "Swagger 연결").
+
+## 2026-11-14 Swagger 연결 (BE 2)
+
+- 사용자(BE 2) 결정으로 `springdoc-openapi-starter-webmvc-ui` 2.8.17(Spring Boot 3.5용)을 추가했어요. 로컬·배포 모두 켜고, 끌 때는 환경 변수 `SWAGGER_ENABLED=false`예요.
+- 주소: `/swagger-ui/index.html`(화면), `/v3/api-docs`(OpenAPI JSON). "Authorize"에 액세스 토큰을 넣으면 모든 요청에 `Bearer`로 붙어요.
+- BE 1 영역을 두 군데 고쳤어요(BE 1 검토 필요): `SecurityConfig`에 Swagger 경로 로그인 없이 열기 한 줄, `global/config/OpenApiConfig` 추가(Bearer 인증 방식, `@LoginUser` 회원 id는 문서 파라미터에서 숨김).
+- 2026-11-15 사용자 요청: Swagger 설명을 한국어로 바꿨어요. 묶음 이름(인증·요약카드·여행계획…)·API 요약·설명·쿼리 설명은 컨트롤러에 어노테이션을 붙이지 않고 `OpenApiConfig` 한곳에 모았어요(BE 1 컨트롤러를 건드리지 않으려고). 새 API를 만들면 `OPERATIONS`에 한 줄 추가해요. 묶음은 화면 흐름 순서로 보여 주려고 `tags-sorter: alpha`를 뺐어요. "Try it out"·"Execute" 같은 Swagger 버튼 글자는 라이브러리 화면이라 영어 그대로예요.
 
 ## 2026-11-12 BE 2 작업 시작 때 정한 것
 
@@ -91,12 +98,26 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 | 10 | BE 2 에러 코드 | `PLACE_NOT_FOUND` 404 "카드를 찾을 수 없어요.", `PLAN_NOT_FOUND` 404 "계획을 찾을 수 없어요.", `PLAN_DAY_NOT_FOUND` 404 "일자를 찾을 수 없어요.", `DUPLICATE_PLAN_PLACE` 409 "이미 다른 일자에 넣은 장소예요.", `INVALID_PLAN_PLACE` 400 "계획에 넣을 수 없는 카드예요.", `AI_EXTRACTION_FAILED` 500 "링크에서 여행 정보를 찾지 못했어요.". 카드 입력 검사는 `INVALID_INPUT` |
 | 11 | 작은 값 | `radiusM` 기본 1500, `sortType`은 `LATEST`만, `categoryCounts`는 `category` 필터와 관계없이 세고 반경 필터는 적용, 완성 일자가 다시 미완성이 되면 계획을 `DRAFT`로, 시간대 Asia/Seoul(`+09:00`), Gemini 호출당 40초 제한, 테스트 H2는 `NON_KEYWORDS=USER`로 `user` 테이블 이름 유지 |
 
+## 2026-11-15 #58 요약카드 휴지통
+
+- 사용자(BE 2) 결정 A안: `DELETE /places/{placeId}`는 카드를 휴지통으로 옮기고(`place.deleted_at`), 계획의 노드·플랜B·숙소는 지금처럼 빼요(결정 #9 유지). 복구하면 보관함으로만 돌아오고 계획 자리는 돌아오지 않아요. Notion 예외상황의 "계획 재접속 시 삭제된 장소 복구" 대신 Figma의 "계획에 포함된 카드예요, 정말 삭제?" 흐름을 따른 거예요.
+- `Place`에 `@SQLRestriction("deleted_at IS NULL")`을 걸어 JPA 조회는 모두 휴지통 카드를 빼요. 휴지통 목록·복구·완전 삭제만 `PlaceTrashRepository`의 SQL로 다뤄요.
+- 자동으로 비우는 기간은 두지 않아요(Figma에도 없음). 이미 만든 DB는 [sql/003-place-trash.sql](sql/003-place-trash.sql)을 적용해요.
+
 ## 2026-11-13 S4-2 AI 초안
 
 - `POST /plans/{planId}/ai-drafts`를 추가했습니다(요청 본문 없음, `200` + 계획 보기 응답). 자세한 규칙은 `docs/api-spec.md`. FE 합의 필요.
-- 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다.
+- 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다. (숙소 규칙은 아래 2026-11-15에서 바뀜)
+- 2026-11-15 사용자(BE 2) 결정 #60: AI 초안 뒤 모든 일자를 완성으로, 계획은 `COMPLETED`(작성 완료)로 둬요. Notion 4-4 "AI초안 생성 완료 시 → 계획 완성 보기"와 Figma S4-2 "로딩 후 S4-7" 흐름에 맞춘 거예요. 일자를 미완성으로 고치면 결정 #11대로 `DRAFT`로 돌아가요.
+- 2026-11-15 사용자(BE 2) 결정: 계획에 숙소가 이미 있으면(예약한 숙소) AI 초안이 바꾸지 않고 그 숙소를 기준으로 동선만 짭니다. 숙소가 비어 있을 때만 AI가 고릅니다. Notion 기능명세서 4-2는 처리 로직이 비어 있고, Figma S4-2는 AI 초안 전에 숙소를 고르는 화면이 없습니다. AI 초안 전에 숙소를 받을지는 기획·FE 합의 필요(지금은 `PUT /plans/{planId}/stays`로 먼저 넣으면 유지).
 - 새 에러 코드: `AI_DRAFT_NO_PLACES`(400), `AI_DRAFT_FAILED`(500). 문구는 (제안).
 - `GEMINI_API_KEY`가 없으면 링크 분석과 같이 prod는 실패, 그 밖은 가짜 초안(경도 순으로 나누기)을 씁니다.
+
+## 2026-11-15 #56 공유 계획 동시 열기와 schema.sql 제약
+
+- `docs/schema.sql`에 BE 2 테이블 유니크 4개(`plan_day`·`plan_stay`·`plan_node`·`plan_member`)와 인덱스 4개가 빠져 있었어요. prod `validate`는 이걸 검사하지 않아서 서버는 떴고, 공유 계획을 동시에 열면 멤버가 중복돼 그 사람은 계속 500이었어요.
+- schema.sql에 채우고, 이미 만든 DB용으로 [sql/002-be2-unique-indexes.sql](sql/002-be2-unique-indexes.sql)을 추가했어요. `SchemaSqlConstraintTest`가 엔티티의 유니크·인덱스 이름이 schema.sql에 있는지 매번 대조해요(엔티티에 제약을 추가하면 schema.sql도 같이 고쳐야 테스트가 통과해요).
+- 결정 #7 자동 멤버 추가는 `INSERT IGNORE`로 "없을 때만 추가"해요. 동시에 열어도 모두 200이고 멤버는 한 번만 생겨요.
 
 ## 2026-11-14 BE1 개발 방식과 #8 가짜 API
 
@@ -108,3 +129,34 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 ## 2026-11-14 메일 발송 의존성
 
 - 사용자 선택으로 `spring-boot-starter-mail` 추가는 보류해요. #10 실제 메일 전송 방식은 이 결정이 바뀌거나 다른 방식이 정해진 뒤 연결해요.
+
+## 2026-11-14 #19 본문 수집 의존성
+
+- 사용자가 `org.jsoup:jsoup:1.24.1`, `org.apache.httpcomponents.client5:httpclient5` 추가를 보류했어요. #19는 새 의존성 없이 JDK의 정적 HTML 파서와 소켓/TLS를 사용해요. 지원 범위·호출 제한·실제 공개 링크 확인 결과는 [fetcher-web.md](fetcher-web.md)에 기록해요.
+
+## 2026-11-14 #22 Places 저장 정책
+
+- 사용자 선택으로 영구 보강은 비활성화한 상태로 코드·테스트만 준비해요. Google 저장 정책·계약 예외와 FE 출처 표시를 확인하기 전 MAPS_PERSIST_ENRICHMENT=false를 유지해요.
+- 2026-11-15 BE 2 결정으로 위 기본값을 바꿨어요: MAPS_PERSIST_ENRICHMENT 기본 true. 보강이 꺼져 있으면 링크 분석 장소 카드에 주소·좌표가 없어 저장·AI 초안·경로에 못 쓰기 때문이에요. Google 정책 확인과 FE 출처 표시는 남은 일이고, 문제가 되면 false로 꺼요. Places 사진을 Storage로 영구 복사하지 않아요. [places-enrichment.md](places-enrichment.md)를 참고해요.
+
+## 2026-11-14 #12 로그인·재발급 우선 구현
+
+- 사용자 요청으로 메일은 계속 보류하고 #12를 먼저 구현해요. 새 의존성은 없어요.
+- 기존 BCrypt·JWT·Clock과 인증 DB를 재사용해요. refresh 원문은 무작위 32바이트, DB 값은 SHA-256 해시예요. 기존 컬럼을 유지해요.
+- 재발급은 행 잠금 안에서 이전 해시를 교체하고 로그인 때 정한 14일 만료는 연장하지 않아요. 같은 토큰의 동시 요청은 하나만 성공하고, 교체된 이전 토큰의 재사용은 거부해요.
+- 개발용 로그인은 local + 명시적 opt-in에서만 유지하고 prod에서는 비활성화해요. 호출 방식과 FE 확인 사항은 [auth-login.md](auth-login.md)에 있어요.
+
+## 2026-11-14 S2-1 빈 항목 AI 카드 저장 (BE 2)
+
+- 사용자(BE 2) 결정: `POST /places`에서 AI 카드(`sourceLinkId` 있음) 중 필수 항목이 빈 카드는 빼고 나머지만 저장해요. 뺀 카드는 응답 `skipped`(`index`, `sourceLinkId`, `name`, `missingFields`)로 알려요. Places 보강을 못 한 카드 한 장 때문에 "모두 저장" 전체가 400이 되던 문제를 막아요.
+- 저장된 장소 카드는 지금처럼 항상 사진·주소·좌표가 있어서 지도·계획·AI 초안 코드는 바꾸지 않아요. "장소 카드 필수" 규칙(위 "서버에서 검사할 규칙")은 그대로예요.
+- 직접 추가 카드(S3-3)와 형식 오류는 지금처럼 요청 전체 `400 INVALID_INPUT`이에요. 모든 카드가 빠져도 `201`에 `places: []`예요.
+- 응답 필드 추가라 FE 공유가 필요해요. 기존 `places` 필드는 그대로예요.
+
+## 2026-11-15 가입·인증번호 메일 (BE 2가 #10·#11·#13 진행)
+
+- 사용자 결정으로 메일 인증까지 포함한 가입을 만들어요. 위 "메일 발송 의존성 보류"를 바꿔 `spring-boot-starter-mail`을 추가하고 Gmail SMTP로 보내요.
+- 계정·앱 비밀번호는 `MAIL_USERNAME`·`MAIL_PASSWORD`(배포는 Secret Manager), 보내는 주소는 `MAIL_FROM`(없으면 `MAIL_USERNAME`). 접속·읽기·쓰기 시간 제한 5초, 실패는 `MAIL_SEND_FAILED`.
+- 메일 서버 상태가 `/actuator/health`를 DOWN으로 만들지 않게 mail health는 꺼요.
+- 비밀번호 재설정 메일(#14)은 이번 범위가 아니에요.
+

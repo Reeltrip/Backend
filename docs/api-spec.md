@@ -13,7 +13,8 @@
 | 항목 | 규칙 |
 | --- | --- |
 | 주소 | 명사 복수형, 소문자, 하이픈. 접두사(`/api` 등)는 문서에 없어 붙이지 않았습니다 |
-| 인증 | `Authorization: Bearer {accessToken}`. `/auth/**`, 읽기 전용 공유 계획 조회, `/actuator/health`만 로그인 없이 열림 |
+| 인증 | `Authorization: Bearer {accessToken}`. `/auth/**`, 읽기 전용 공유 계획 조회, `/actuator/health`, Swagger 문서만 로그인 없이 열림 |
+| Swagger | `/swagger-ui/index.html`(화면), `/v3/api-docs`(OpenAPI JSON). "Authorize"에 액세스 토큰을 넣으면 그대로 호출해 볼 수 있음. 로컬·배포 모두 켜져 있고 `SWAGGER_ENABLED=false`면 꺼짐 (2026-11-14) |
 | 필드 | 카멜 케이스. PK는 `placeId`처럼 도메인명을 붙임. 목록은 `places`, `plans`처럼 `{도메인명}s` |
 | Enum | `.name()` 값 그대로: `"category": "FOOD"`, `"status": "DRAFT"` |
 | 페이지 | `page`(0부터), `size`, `sortType` |
@@ -51,6 +52,7 @@
 | `INVALID_INPUT` | 입력한 내용을 다시 확인해 주세요. (제안) | 공통 |
 | `INVALID_LOGIN` | 이메일 또는 비밀번호를 확인해주세요 | S0-1a |
 | `SOURCE_FETCH_FAILED` | 링크가 비공개이거나 지원하지 않는 형식일 수 있어요. | S1-3 |
+| `SOURCE_NOT_FOUND` | 수집 내역을 찾을 수 없어요. (제안) | S1-2, S1-3 |
 | `INVALID_PLAN_PERIOD` | 여행 기간을 다시 확인해주세요 | S4-1 |
 | `ROUTE_NOT_FOUND` | 경로 정보를 불러오지 못했어요 | S4-7a |
 | `PLAN_FORBIDDEN` | 이 계획을 볼 수 있는 권한이 없어요. | S4-8 |
@@ -76,7 +78,10 @@
 | 카드 | GET | `/places` | 보관함 목록, 카테고리별 개수 포함 | S3-1 | BE 2 |
 | 카드 | GET | `/places/{placeId}` | 카드 상세 | S3-2 | BE 2 |
 | 카드 | PATCH | `/places/{placeId}` | 카드 수정 | S2-2, S3-2 | BE 2 |
-| 카드 | DELETE | `/places/{placeId}` | 카드 삭제 | S3-2 | BE 2 |
+| 카드 | DELETE | `/places/{placeId}` | 카드 삭제 → 휴지통으로 (2026-11-15 변경) | S3-2 | BE 2 |
+| 카드 | GET | `/places/trash` | 휴지통 목록 (2026-11-15 추가) | Figma 3-3 | BE 2 |
+| 카드 | POST | `/places/trash/restore` | 휴지통에서 복구 (2026-11-15 추가) | Figma 3-3 | BE 2 |
+| 카드 | DELETE | `/places/trash?placeIds=` | 휴지통에서 완전 삭제 (2026-11-15 추가) | Figma 3-3 | BE 2 |
 | 사진 | POST | `/images` | 사진 올리기 → Cloud Storage 주소 | S2-2, S3-3 | BE 1 |
 | 장소 검색 | GET | `/place-search` | 이름 → 현지 주소·좌표·사진 | S3-3 | BE 1 |
 | 계획 | GET | `/plans` | 작성 중인 계획, 내 계획, 공유받은 계획 | S4-0, S5-1 | BE 2 |
@@ -185,6 +190,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### POST `/auth/login`
 
+2026-11-14 실제 구현·토큰 회전·FE 호출 주의점은 [auth-login.md](auth-login.md)에 있어요. 메일 없이 기존 BCrypt 계정으로 로그인해요.
+
 ```json
 { "email": "traveler@email.com", "password": "********" }
 ```
@@ -194,6 +201,8 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 ### POST `/auth/refresh`
 
 `{ "refreshToken": "..." }` → `200 { "accessToken": "...", "refreshToken": "..." }`
+
+성공할 때 이전 리프레시 토큰을 교체하며, FE는 새 두 토큰을 함께 저장해요. 로그인 시 정한 리프레시 만료 시각은 연장하지 않아요.
 
 ### 비밀번호 찾기 흐름 (S0-1a)
 
@@ -251,11 +260,15 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 ### GET `/users/me`
 
+인증한 회원만 조회해요. 카드 수에는 교통·팁도 포함하고, 계획 수에는 OWNER·EDITOR·VIEWER로 참여한 계획을 모두 포함해요. DB에 회원이 없으면 `401 UNAUTHORIZED`, 응답은 캐시하지 않아요.
+
 ```json
 { "userId": 1, "email": "traveler@email.com", "nickname": "보영", "placeCount": 27, "planCount": 3 }
 ```
 
 ## 링크 분석
+
+2026-11-14: 접수·저장 상태 조회 구현과 #23 분석 연결 경계는 [source-api.md](source-api.md)에 있어요. 현재 POST는 PENDING 저장까지 하며, 실제 백그라운드 분석은 #23에서 연결해요.
 
 ### GET `/sources?page=0&size=10`
 
@@ -348,6 +361,10 @@ FE가 몇 초마다 부릅니다.
 - `source.title`은 초안에서 가장 많이 나온 도시로 "{도시} 여행"을 만듭니다. 도시를 못 얻으면 접수 날짜를 씁니다.
 
 ### 링크 종류별 내용 가져오기
+
+2026-11-14: #19의 네이버 PostView/mainFrame·일반 웹 정적 본문 수집과 공개 IP 검증은 [fetcher-web.md](fetcher-web.md)에 있어요. 새 의존성 없이 JDK 기본 HTML 파서·소켓을 사용하며, 기존 FetchedContent(text, thumbnailUrl) 계약을 유지해요. Cloud Run 확인과 접수 작업 실행 연결(#23)은 남아 있어요.
+
+2026-11-14: #18의 플랫폼 판별·유튜브 입력·oEmbed 수집 경계와 호출 제한은 [fetcher-youtube.md](fetcher-youtube.md)에 있어요. 일반·쇼츠·youtu.be를 FetchedContent(text=null)로 기존 LlmClient에 넘길 수 있으며, source 작업 실행 연결은 #23에서 해요. 인스타·블로그 수집기는 #19·#20에서 추가해요.
 
 | 종류 | 방법 | 상태 |
 | --- | --- | --- |
@@ -459,7 +476,7 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
 }
 ```
 
-- 장소 카드 필수: `imageUrl`, `category`, `name`, `address`, `latitude`, `longitude`. `sourceUrl`은 AI가 만든 카드에서만 필수.
+- 장소 카드 필수: `imageUrl`, `category`, `name`, `address`, `latitude`, `longitude`. `sourceUrl`은 AI가 만든 카드에서만 필수. AI 카드의 필수 항목이 비면 아래 `skipped` 규칙을 따릅니다.
 - `keyPoints`는 최대 3개. 서버에서도 검사합니다.
 - `priceText`, `memo`는 50자까지(디자인 직접 추가 화면). `reviewCount`, `openingHours`, `accessText`는 없으면 `null`.
 - 교통·팁 카드는 아래 항목을 씁니다. 값이 없으면 `null`.
@@ -479,7 +496,22 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
 }
 ```
 
-`201 { "places": [ { "placeId": 101, "name": "하카타 잇소", "category": "FOOD" } ] }`
+`201`
+
+```json
+{
+  "places": [ { "placeId": 101, "name": "하카타 잇소", "category": "FOOD" } ],
+  "skipped": [
+    { "index": 1, "sourceLinkId": 31, "name": "이름만 나온 가게", "missingFields": ["imageUrl", "address", "latitude", "longitude"] }
+  ]
+}
+```
+
+- **빈 항목이 있는 AI 카드는 빼고 저장합니다 (2026-11-14, FE 공유 필요).** `sourceLinkId`가 있는 카드 중 필수 항목(장소: `imageUrl`·`address`·`latitude`·`longitude`, 교통·팁: `subType`·`applicableRegion`)이 빈 카드는 저장하지 않고 `skipped`에 넣습니다. 나머지 카드는 저장합니다. Places 보강을 못 한 카드 때문에 "모두 저장" 전체가 실패하지 않게 하기 위해서입니다.
+  - `index`는 요청 `places` 안의 순서(0부터), `missingFields`는 빈 항목의 필드 이름입니다. FE는 이 카드들을 화면에 남겨 빈 항목을 채운 뒤 다시 저장하게 할 수 있습니다.
+  - 모든 카드가 빠지면 `201`에 `places: []`와 `skipped`가 옵니다. 뺄 카드가 없으면 `skipped: []`입니다.
+- 직접 추가한 카드(`sourceLinkId` 없음, S3-3)는 필수 항목이 비면 지금처럼 `400 INVALID_INPUT`입니다.
+- 형식 오류(카테고리 없음, 이름·가격·메모 길이, `keyPoints` 4개 이상, 좌표 범위, 남의 `sourceLinkId` 등)는 AI 카드여도 요청 전체가 `400`이고 한 장도 저장하지 않습니다.
 
 ### GET `/places?category=FOOD&page=0&size=20&sortType=LATEST`
 
@@ -523,7 +555,27 @@ GET /places?latitude=34.6873&longitude=135.5262&radiusM=1500
 
 ### DELETE `/places/{placeId}`
 
-`204`.
+`204`. 카드를 바로 지우지 않고 휴지통으로 옮겨요(#58). 이 카드를 쓰던 계획의 노드·플랜B·숙소는 지금처럼 빼요. 휴지통 카드는 보관함 목록·상세·개수·계획 불러오기·AI 초안·계획에 넣기 어디에도 나오지 않아요(상세·수정·삭제는 `404 PLACE_NOT_FOUND`).
+
+### 휴지통 (Figma 3-2 휴지통 보기 선택, 3-3 휴지통 보기·복원·삭제, 2026-11-15 추가)
+
+`GET /places/trash` → `200`. 최근에 지운 카드부터, 자동으로 비우지 않아요.
+
+```json
+{
+  "places": [
+    { "placeId": 101, "category": "FOOD", "name": "Shin Shin", "address": "福岡市…", "imageUrl": "https://…",
+      "keyPoints": ["돈코츠 라멘"], "deletedAt": "2026-11-15T10:24:00+09:00" }
+  ],
+  "totalCount": 7
+}
+```
+
+`POST /places/trash/restore` `{ "placeIds": [101, 102] }` → `204`. 보관함으로만 돌아오고, 계획에서 빠졌던 자리는 돌아오지 않아요(다시 넣어야 해요).
+
+`DELETE /places/trash?placeIds=101,102` → `204`. 완전히 지워서 되돌릴 수 없어요.
+
+- 복구·삭제는 여러 장을 한 번에 받아요. 내 휴지통에 없는 카드(보관함 카드·남의 카드·없는 id)가 하나라도 섞이면 `404 PLACE_NOT_FOUND`이고 아무것도 바뀌지 않아요. 빈 목록은 `400 INVALID_INPUT`.
 
 ## 사진·장소 검색
 
@@ -712,8 +764,9 @@ Google Maps 키는 BE에만 있어서 FE는 이 API를 거쳐 검색합니다.
 1단계(여행명·장소·기간)로 만든 계획에 AI가 숙소와 일자별 노드 순서를 채웁니다. Notion 기획 "혹은 1. 이후 (→ 계획 초안 생성 → 수정)"을 따른 것이고, 요청 본문은 없습니다.
 
 - 후보: 계획 만든 사람의 보관함에서 계획 도시의 장소 카드(좌표 있는 것, 최근 60장까지). 교통·팁 카드는 넣지 않습니다.
-- AI가 좌표를 보고 가까운 곳끼리 같은 날에 묶고, 하루 안은 이동이 짧은 순서로 놓습니다. 숙소는 `STAY` 카드에서 골라 `stays`에 넣고, 하루 최대 8곳, 후보가 많으면 다 넣지 않을 수 있습니다. 플랜B는 만들지 않습니다.
-- 기존 노드·플랜B·숙소는 덮어씁니다(FE가 확인 팝업). 모든 일자는 미완성, 계획은 `DRAFT`가 됩니다.
+- AI가 좌표를 보고 가까운 곳끼리 같은 날에 묶고, 하루 안은 이동이 짧은 순서로 놓습니다. 하루 최대 8곳, 후보가 많으면 다 넣지 않을 수 있습니다. 플랜B는 만들지 않습니다.
+- 숙소 (2026-11-15 변경): 계획에 숙소가 이미 있으면(예약한 숙소를 `PUT /plans/{planId}/stays`로 먼저 넣어 둔 경우) **그대로 두고**, AI는 그 숙소 위치를 기준으로 동선만 짭니다. 이때 보관함의 다른 숙소 카드는 후보에서 뺍니다. 숙소가 비어 있을 때만 AI가 `STAY` 카드 중 1개를 골라 `stays`에 넣습니다.
+- 기존 노드·플랜B는 덮어씁니다(FE가 확인 팝업). 모든 일자는 완성, 계획은 `COMPLETED`가 됩니다(2026-11-15 #60: 응답을 받으면 바로 S4-7 계획 완성 보기로 가요). 계획 수정에서 일자를 미완성으로 저장하면 지금 규칙대로 `DRAFT`로 돌아가요.
 - `200` → `GET /plans/{planId}`와 같은 모양.
 
 | 실패 | code |

@@ -1,0 +1,30 @@
+name: Java CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Test and verify production jar
+        run: bash ./gradlew --no-daemon test bootJar verifyMockIsolation
+      - name: Verify deployment gates without cloud access
+        run: bash scripts/test-deploy.sh
+      - name: Build runtime image
+        run: docker build --tag reeltrip-ci:${GITHUB_SHA} .

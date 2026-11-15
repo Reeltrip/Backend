@@ -1,5 +1,7 @@
 package com.reeltrip.domain.place.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,16 +14,22 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.reeltrip.domain.place.dto.PlaceCardRequest;
 import com.reeltrip.domain.place.dto.PlaceCreateRequest;
 import com.reeltrip.domain.place.dto.PlaceCreateResponse;
 import com.reeltrip.domain.place.dto.PlaceListRequest;
 import com.reeltrip.domain.place.dto.PlaceListResponse;
 import com.reeltrip.domain.place.dto.PlaceResponse;
 import com.reeltrip.domain.place.dto.PlaceSortType;
+import com.reeltrip.domain.place.dto.PlaceTrashResponse;
+import com.reeltrip.domain.place.dto.PlaceTrashRestoreRequest;
 import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.domain.place.service.PlaceService;
+import com.reeltrip.domain.place.service.PlaceTrashService;
 import com.reeltrip.global.security.LoginUser;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 
 /** POST/GET /places, GET/PATCH/DELETE /places/{placeId}. 소유: place 팀원 */
@@ -29,9 +37,11 @@ import jakarta.validation.Valid;
 public class PlaceController {
 
     private final PlaceService placeService;
+    private final PlaceTrashService placeTrashService;
 
-    public PlaceController(PlaceService placeService) {
+    public PlaceController(PlaceService placeService, PlaceTrashService placeTrashService) {
         this.placeService = placeService;
+        this.placeTrashService = placeTrashService;
     }
 
     /** S2-1 "모두 저장", S3-3 직접 추가 */
@@ -64,14 +74,37 @@ public class PlaceController {
     /** S2-2·S3-2 카드 수정. 들어온 필드만 바꾸고, null로 온 필드는 비워요. */
     @PatchMapping("/places/{placeId}")
     public PlaceResponse modifyPlace(@LoginUser Long userId, @PathVariable Long placeId,
+                                     // 보낸 필드만 바꾸려고 JsonNode로 받지만, 문서에는 카드 형식으로 보여줘요.
+                                     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(
+                                             schema = @Schema(implementation = PlaceCardRequest.class)))
                                      @RequestBody JsonNode body) {
         return placeService.modifyPlace(userId, placeId, body);
     }
 
-    /** S3-2 카드 삭제 */
+    /** S3-2 카드 삭제. 휴지통으로 옮겨요(#58) */
     @DeleteMapping("/places/{placeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removePlace(@LoginUser Long userId, @PathVariable Long placeId) {
         placeService.removePlace(userId, placeId);
+    }
+
+    /** Figma 3-3 휴지통 보기 (#58) */
+    @GetMapping("/places/trash")
+    public PlaceTrashResponse getTrash(@LoginUser Long userId) {
+        return placeTrashService.getTrash(userId);
+    }
+
+    /** Figma 3-3 휴지통 → 선택 → 복구. 보관함으로만 돌아와요 */
+    @PostMapping("/places/trash/restore")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void restoreFromTrash(@LoginUser Long userId, @Valid @RequestBody PlaceTrashRestoreRequest request) {
+        placeTrashService.restore(userId, request.placeIds());
+    }
+
+    /** Figma 3-3 휴지통 → 선택 → 삭제. 완전히 지워요 */
+    @DeleteMapping("/places/trash")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void purgeTrash(@LoginUser Long userId, @RequestParam List<Long> placeIds) {
+        placeTrashService.purge(userId, placeIds);
     }
 }

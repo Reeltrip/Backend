@@ -1,6 +1,7 @@
 package com.reeltrip.domain.place.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -65,24 +66,41 @@ public class PlaceService {
         this.objectMapper = objectMapper;
     }
 
-    /** POST /places. 한 장이라도 틀리면 한 장도 저장하지 않아요(모두 검사한 뒤 저장). */
+    /**
+     * POST /places. 형식이 틀린 카드가 한 장이라도 있으면 한 장도 저장하지 않아요(모두 검사한 뒤 저장).
+     * AI 카드(sourceLinkId 있음) 중 Places 보강을 못 해 필수 항목이 빈 카드는 빼고 나머지만 저장하고 skipped로 알려요.
+     * 직접 추가한 카드(S3-3)는 사용자가 채운 값이라 필수 항목이 비면 지금처럼 400이에요.
+     */
     @Transactional
     public PlaceCreateResponse createPlaces(Long userId, PlaceCreateRequest request) {
         User user = userRepository.getReferenceById(userId);
         List<Place> places = new ArrayList<>();
-        for (PlaceCardRequest card : request.places()) {
+        List<PlaceCreateResponse.Skipped> skipped = new ArrayList<>();
+        for (int index = 0; index < request.places().size(); index++) {
+            PlaceCardRequest card = request.places().get(index);
             if (card == null) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT);
             }
             SourceLink sourceLink = getOwnedSourceLink(userId, card.sourceLinkId());
             PlaceContent content = toContent(card);
-            placeValidator.validate(content, sourceLink != null);
+            if (sourceLink == null) {
+                placeValidator.validate(content, false);
+                places.add(Place.create(user, null, content));
+                continue;
+            }
+            placeValidator.validateFormat(content, true);
+            List<String> missingFields = placeValidator.missingRequiredFields(content);
+            if (!missingFields.isEmpty()) {
+                skipped.add(new PlaceCreateResponse.Skipped(
+                        index, sourceLink.getSourceLinkId(), content.name(), missingFields));
+                continue;
+            }
             places.add(Place.create(user, sourceLink, content));
         }
         List<PlaceCreateResponse.Item> saved = placeRepository.saveAll(places).stream()
                 .map(PlaceCreateResponse.Item::from)
                 .toList();
-        return new PlaceCreateResponse(saved);
+        return new PlaceCreateResponse(saved, List.copyOf(skipped));
     }
 
     /**
@@ -150,7 +168,8 @@ public class PlaceService {
     }
 
     /**
-     * DELETE /places/{placeId}. 이 카드를 쓰는 플랜B·노드·숙소도 같이 지워요(decisions #9).
+     * DELETE /places/{placeId}. 카드는 휴지통으로 옮기고(#58), 이 카드를 쓰는 플랜B·노드·숙소는 지워요(decisions #9).
+     * 복구해도 보관함으로만 돌아오고 계획 자리는 돌아오지 않아요(사용자 결정 A안).
      * Hibernate는 orphan 삭제를 flush 때 큐에 넣어 카드 삭제보다 늦게 보낼 수 있어서 단계마다 flush해요.
      */
     @Transactional
@@ -170,7 +189,7 @@ public class PlaceService {
         }
         placeRepository.flush();
 
-        placeRepository.delete(place);
+        place.moveToTrash(LocalDateTime.now());
     }
 
     /** GET /users/me의 보관함 카드 수 (BE 1이 씀). 교통·팁 포함 */
