@@ -39,10 +39,15 @@ rm -- "$scratch/calls" "$scratch/staged"
 if FAIL_HEALTH=true bash scripts/deploy-cloud-run.sh; then
   echo 'health 실패가 성공으로 처리됐어요.' >&2; exit 1
 fi
-! grep -q 'update-traffic' "$scratch/calls"
+# set -e는 '! 명령'의 실패로 멈추지 않아서 if로 직접 실패시켜요.
+if grep -q 'update-traffic' "$scratch/calls"; then
+  echo 'health 실패인데 트래픽을 옮겼어요.' >&2; exit 1
+fi
 rm -- "$scratch/calls" "$scratch/staged"
 if FAIL_IMAGE=true bash scripts/deploy-cloud-run.sh; then
   echo '이미지 처리 실패가 성공으로 처리됐어요.' >&2; exit 1
 fi
-! grep -q 'run deploy' "$scratch/calls"
+if grep -q 'run deploy' "$scratch/calls"; then
+  echo '이미지 처리 실패인데 배포했어요.' >&2; exit 1
+fi
 echo 'deploy checks: success / health failure / image failure passed'
