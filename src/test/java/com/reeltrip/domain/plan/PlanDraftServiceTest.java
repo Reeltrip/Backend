@@ -145,6 +145,66 @@ class PlanDraftServiceTest {
     }
 
     @Test
+    @DisplayName("계획에 숙소를 이미 정해 두었으면 AI 초안은 그 숙소를 그대로 두고 AI가 고른 숙소로 바꾸지 않는다.")
+    void createAiDraft_keepsChosenStays() throws Exception {
+        // given: 예약한 호텔(stay)을 숙소로 정해 둔 계획, 보관함에는 다른 호텔도 있음
+        Place otherStay = placeRepository.save(PlanEditFixtures.place(owner, Category.STAY, "다른 호텔"));
+        plan.addStay(stay);
+        em.flush();
+        // AI가 다른 호텔을 숙소로 골라 돌려줌
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(otherStay.getPlaceId()),
+                List.of(List.of(sight.getPlaceId()), List.of(food.getPlaceId()))));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk())
+                // then: 숙소는 정해 둔 호텔 하나 그대로, 동선은 AI 초안
+                .andExpect(jsonPath("$.stays.length()").value(1))
+                .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()))
+                .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(sight.getPlaceId()));
+    }
+
+    @Test
+    @DisplayName("숙소를 정해 두었으면 AI에는 그 숙소만 숙소 후보로 넘기고 정해진 숙소라고 알려 준다.")
+    void createAiDraft_chosenStays_sentAsFixed() throws Exception {
+        // given: 숙소로 정해 둔 호텔(stay)과 보관함의 다른 호텔
+        Place otherStay = placeRepository.save(PlanEditFixtures.place(owner, Category.STAY, "다른 호텔"));
+        plan.addStay(stay);
+        em.flush();
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(List.of(), List.of(List.of(), List.of())));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk());
+
+        // then
+        var captor = org.mockito.ArgumentCaptor.forClass(PlanDraftRequest.class);
+        verify(planDraftClient).draftPlan(captor.capture());
+        assertThat(captor.getValue().fixedStayPlaceIds()).containsExactly(stay.getPlaceId());
+        assertThat(captor.getValue().candidates()).extracting(PlanDraftRequest.Candidate::placeId)
+                .contains(stay.getPlaceId(), food.getPlaceId())
+                .doesNotContain(otherStay.getPlaceId());
+    }
+
+    @Test
+    @DisplayName("숙소를 정하지 않았으면 AI가 보관함 숙소 카드 중에서 골라 숙소로 넣는다.")
+    void createAiDraft_noChosenStays_aiPicks() throws Exception {
+        // given: 숙소가 비어 있는 계획
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(stay.getPlaceId()), List.of(List.of(food.getPlaceId()), List.of())));
+
+        // when
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(status().isOk())
+                // then
+                .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()));
+        var captor = org.mockito.ArgumentCaptor.forClass(PlanDraftRequest.class);
+        verify(planDraftClient).draftPlan(captor.capture());
+        assertThat(captor.getValue().fixedStayPlaceIds()).isEmpty();
+    }
+
+    @Test
     @DisplayName("보관함에 계획 도시의 장소 카드가 없으면 AI를 부르지 않고 400 AI_DRAFT_NO_PLACES로 실패한다.")
     void createAiDraft_noPlaces() throws Exception {
         // given: 다른 회원의 계획 (그 회원 보관함은 비어 있음)

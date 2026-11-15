@@ -94,7 +94,8 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 ## 2026-11-13 S4-2 AI 초안
 
 - `POST /plans/{planId}/ai-drafts`를 추가했습니다(요청 본문 없음, `200` + 계획 보기 응답). 자세한 규칙은 `docs/api-spec.md`. FE 합의 필요.
-- 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다.
+- 기존 동선을 덮어쓰고, 숙소는 `STAY` 카드 중 AI가 1개를 고르고, 플랜B는 만들지 않습니다. (숙소 규칙은 아래 2026-11-15에서 바뀜)
+- 2026-11-15 사용자(BE 2) 결정: 계획에 숙소가 이미 있으면(예약한 숙소) AI 초안이 바꾸지 않고 그 숙소를 기준으로 동선만 짭니다. 숙소가 비어 있을 때만 AI가 고릅니다. Notion 기능명세서 4-2는 처리 로직이 비어 있고, Figma S4-2는 AI 초안 전에 숙소를 고르는 화면이 없습니다. AI 초안 전에 숙소를 받을지는 기획·FE 합의 필요(지금은 `PUT /plans/{planId}/stays`로 먼저 넣으면 유지).
 - 새 에러 코드: `AI_DRAFT_NO_PLACES`(400), `AI_DRAFT_FAILED`(500). 문구는 (제안).
 - `GEMINI_API_KEY`가 없으면 링크 분석과 같이 prod는 실패, 그 밖은 가짜 초안(경도 순으로 나누기)을 씁니다.
 

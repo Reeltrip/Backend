@@ -14,11 +14,13 @@ public class FakePlanDraftClient implements PlanDraftClient {
 
     @Override
     public PlanDraftResult draftPlan(PlanDraftRequest request) {
-        List<Long> stays = request.candidates().stream()
-                .filter(candidate -> candidate.category() == Category.STAY)
-                .map(PlanDraftRequest.Candidate::placeId)
-                .limit(1)
-                .toList();
+        List<Long> stays = !request.fixedStayPlaceIds().isEmpty()
+                ? request.fixedStayPlaceIds()
+                : request.candidates().stream()
+                        .filter(candidate -> candidate.category() == Category.STAY)
+                        .map(PlanDraftRequest.Candidate::placeId)
+                        .limit(1)
+                        .toList();
         List<PlanDraftRequest.Candidate> nodes = request.candidates().stream()
                 .filter(candidate -> candidate.category() != Category.STAY)
                 .sorted(Comparator.comparing(PlanDraftRequest.Candidate::longitude,

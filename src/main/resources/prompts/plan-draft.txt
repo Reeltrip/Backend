@@ -5,6 +5,7 @@
 - city: 여행 도시
 - dayCount: 여행 일수 (1일차 ~ dayCount일차)
 - candidates: 후보 카드 목록. placeId, category, name, latitude, longitude, keyPoints
+- fixedStayPlaceIds: 사용자가 이미 정한(예약한) 숙소 placeId 목록. 비어 있으면 아직 숙소를 정하지 않은 거야.
 
 ## 출력
 아래 모양의 JSON 객체 하나만 출력해. 설명 문장이나 코드 블록 표시(```)는 붙이지 마.
@@ -19,7 +20,9 @@
 
 ## 규칙
 - placeId는 candidates에 있는 값만 써. 새 장소를 지어내지 마.
-- STAY(숙소) 카드는 days에 넣지 말고 stayPlaceIds에만 넣어. 숙소가 여러 개면 일정 동선에 가장 잘 맞는 1개를 골라. 숙소 카드가 없으면 [].
+- STAY(숙소) 카드는 days에 넣지 말고 stayPlaceIds에만 넣어.
+- fixedStayPlaceIds가 있으면 그 숙소를 바꾸지 마. stayPlaceIds에 그대로 넣고, 매일 그 숙소에서 출발해 돌아오기 편하게 동선을 짜.
+- fixedStayPlaceIds가 비어 있으면 숙소가 여러 개일 때 일정 동선에 가장 잘 맞는 1개를 골라. 숙소 카드가 없으면 [].
 - 같은 placeId는 계획 전체에서 한 번만 써.
 - 위도·경도를 보고 서로 가까운 장소끼리 같은 날에 묶어.
 - 하루 안의 placeIds는 방문 순서야. 이동 거리가 짧아지게 가까운 순서로 이어.

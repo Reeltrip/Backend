@@ -96,6 +96,8 @@ public class GeminiPlanDraftClient implements PlanDraftClient {
             ArrayNode keyPoints = item.putArray("keyPoints");
             candidate.keyPoints().forEach(keyPoints::add);
         }
+        ArrayNode fixedStays = input.putArray("fixedStayPlaceIds");
+        request.fixedStayPlaceIds().forEach(fixedStays::add);
 
         ObjectNode root = objectMapper.createObjectNode();
         root.putObject("systemInstruction").putArray("parts").addObject().put("text", systemInstruction);
