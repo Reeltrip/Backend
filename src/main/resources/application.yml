@@ -57,9 +57,8 @@ app:
     enabled: ${ANALYSIS_ENABLED:true}
     link-timeout: PT90S
   maps:
-    # 2026-11-15 BE 2 결정: AI는 주소·좌표를 만들지 않아서, 보강을 끄면 링크로 만든 장소 카드를 저장할 수 없어요.
-    # 기본은 켜고, Google 정책 문제로 꺼야 하면 MAPS_PERSIST_ENRICHMENT=false (docs/places-enrichment.md).
-    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:true}
+    # 2026-11-16: 저장 허용 예외 확인 전 영구 보강은 기본 비활성으로 유지해요.
+    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:false}
   auth:
     dev-login:
       enabled: ${DEV_LOGIN_ENABLED:false}

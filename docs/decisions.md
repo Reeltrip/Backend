@@ -138,6 +138,7 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 
 - 사용자 선택으로 영구 보강은 비활성화한 상태로 코드·테스트만 준비해요. Google 저장 정책·계약 예외와 FE 출처 표시를 확인하기 전 MAPS_PERSIST_ENRICHMENT=false를 유지해요.
 - 2026-11-15 BE 2 결정으로 위 기본값을 바꿨어요: MAPS_PERSIST_ENRICHMENT 기본 true. 보강이 꺼져 있으면 링크 분석 장소 카드에 주소·좌표가 없어 저장·AI 초안·경로에 못 쓰기 때문이에요. Google 정책 확인과 FE 출처 표시는 남은 일이고, 문제가 되면 false로 꺼요. Places 사진을 Storage로 영구 복사하지 않아요. [places-enrichment.md](places-enrichment.md)를 참고해요.
+- 2026-11-16 사용자에게 위 충돌을 알렸고 결정을 위임받아 기본 false로 복원해요. 계약 예외·저장 기한·만료 삭제가 확인되지 않아 11/14의 비활성 원칙을 적용해요. 초안의 누락 필드는 사용자 확인 후 저장하고, 기존 보관함 데이터는 삭제하지 않아요. Cloud Run의 명시적 환경 변수는 별도로 확인해야 해요.
 
 ## 2026-11-14 #12 로그인·재발급 우선 구현
 

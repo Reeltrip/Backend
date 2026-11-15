@@ -2,6 +2,8 @@
 
 2026-11-14 기준이에요. 제출 11/20·데모 11/22는 원문 일정이며 이슈 마감·마일스톤으로 확정하지 않았어요. 실제 FE·외부 서비스·배포 환경까지 연결한 검증은 아직 남아 있어요.
 
+2026-11-16 후속 결정: Places 영구 보강 기본값은 false로 복원해요. 아래 11/14~11/15 보강 검증·제한 기록은 당시 상태이며, 현재 기본값·계약 확인·운영 환경 변수 우선순위는 [places-enrichment.md](places-enrichment.md)를 따라요.
+
 ## 자동 재현
 
 Java 21에서 `./gradlew test bootJar verifyMockIsolation`을 실행해요. 기본 테스트는 실제 외부 서비스를 호출하지 않아요. 새 JourneyHttpTest는 임의 루프백 포트의 실제 HTTP·JWT·BCrypt·H2·트랜잭션·분석 실행기를 사용하며 수집/LLM/Maps/Storage만 고정 응답으로 바꿔요.
