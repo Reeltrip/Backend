@@ -36,7 +36,7 @@
 | GOOGLE_MAPS_API_KEY | Secret. Places API (New)·Routes API만 허용, API별 일일 한도·예산 알림 설정 |
 | GCS_BUCKET | 승인된 업로드 버킷 이름. 런타임은 metadata 토큰으로 쓰고 GCP_ACCESS_TOKEN은 비움 |
 | CORS_ALLOWED_ORIGINS / SHARE_BASE_URL | 실제 HTTPS FE 주소. 와일드카드 대신 명시한 origin |
-| MAPS_PERSIST_ENRICHMENT | false 유지. 저장 정책·계약 예외 확인 전 영구 보강 금지 |
+| MAPS_PERSIST_ENRICHMENT | true(기본, 2026-11-15 BE 2 결정). 꺼지면 링크 분석 장소 카드가 저장되지 않아요. Google 저장 정책 문제로 꺼야 하면 false |
 | 메일 변수 | #10 보류로 아직 공급·전송하지 않음 |
 
 ## 적용 순서와 첫 검증

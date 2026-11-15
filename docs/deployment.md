@@ -27,6 +27,6 @@ gcloud run services update-traffic SERVICE --project=PROJECT --region=asia-north
 
 서비스 기본 URL에서 health·로그인·DB를 다시 확인하고 원인·SHA·시각을 기록해요. DB 수동 변경과 Secret 값은 revision 롤백으로 복원되지 않아요. JWT 교체·스키마 변경 전에는 이전 revision 호환성과 DB 백업을 먼저 검토해요.
 
-Secret 교체는 새 버전을 만들고 승인 후 기존 서비스의 해당 환경 변수 참조만 새 **고정 버전**으로 바꿔 새 revision을 만들어요. 전체 환경 변수를 덮어쓰거나 latest를 사용하지 않아요. 메일은 계속 보류, MAPS_PERSIST_ENRICHMENT=false를 유지해요.
+Secret 교체는 새 버전을 만들고 승인 후 기존 서비스의 해당 환경 변수 참조만 새 **고정 버전**으로 바꿔 새 revision을 만들어요. 전체 환경 변수를 덮어쓰거나 latest를 사용하지 않아요. 메일은 계속 보류, MAPS_PERSIST_ENRICHMENT는 true(기본)예요.
 
 공식 근거: [gcloud run deploy](https://cloud.google.com/sdk/gcloud/reference/run/deploy), [트래픽·롤백](https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration), [GitHub WIF 인증](https://github.com/google-github-actions/auth). 2026-11-14 확인했어요.

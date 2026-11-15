@@ -51,6 +51,20 @@ class PlaceEnrichmentTest {
                 .hasSize(1).first().extracting(PlaceDraft::address).isNull();
     }
 
+    @Test @DisplayName("Google 영업시간·주소가 길어도 카드 저장 한도(영업시간 100자·주소 255자)에 맞춰 넣는다.")
+    void enrichedValuesFitCardLimits() throws Exception {
+        // given: 요일별 영업시간 7줄(합치면 100자를 훌쩍 넘음)과 아주 긴 주소
+        var week=List.of("월요일: 오전 11:00~오후 10:00","화요일: 오전 11:00~오후 10:00","수요일: 오전 11:00~오후 10:00",
+                "목요일: 오전 11:00~오후 10:00","금요일: 오전 11:00~오후 11:00","토요일: 오전 10:00~오후 11:00","일요일: 오전 10:00~오후 9:00");
+        when(places.search(anyString())).thenReturn(List.of(new MapsPlace("id","가게","가".repeat(300),35.0,135.0,10,week,null,List.of())));
+        // when
+        var card=new PlaceEnrichmentService(places,true).enrich(7L,content,new ExtractionResult("교토",List.of(draft(Category.FOOD)))).getFirst();
+        // then: 요일 중간에서 끊지 않고, 줄였다는 표시를 붙임
+        assertThat(card.openingHours()).hasSizeLessThanOrEqualTo(100).startsWith("월요일: 오전 11:00~오후 10:00").endsWith("…");
+        assertThat(card.openingHours().substring(0,card.openingHours().length()-1)).endsWith("10:00");
+        assertThat(card.address()).hasSizeLessThanOrEqualTo(255);
+    }
+
     private static PlaceDraft draft(Category category) {
         return new PlaceDraft(null,category,"가게",null,null,null,null,null,null,"untrusted",42,
                 List.of("여행"),"¥500",null,null,null,null,null,null,null,null,null,null,null);

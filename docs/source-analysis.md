@@ -1,6 +1,6 @@
 # 비동기 링크 분석 (#23)
 
-접수 트랜잭션 커밋 뒤 링크별 작업을 analysisExecutor에 제출해 수집→기존 LlmClient→보강→draft_json 저장을 실행해요. 분석 시간에는 DB 트랜잭션을 열어 두지 않아요. Places 영구 보강은 사용자 결정에 따라 기본 비활성화예요. 카드 자동 저장은 하지 않아요.
+접수 트랜잭션 커밋 뒤 링크별 작업을 analysisExecutor에 제출해 수집→기존 LlmClient→보강→draft_json 저장을 실행해요. 분석 시간에는 DB 트랜잭션을 열어 두지 않아요. Places 보강은 기본으로 켜져 있어요(2026-11-15, MAPS_PERSIST_ENRICHMENT=false로 끔). 카드 자동 저장은 하지 않아요.
 
 대기 포함 링크당 최대 90초이며 기한에 DB를 실패로 기록하고 작업을 취소해요. 풀 포화는 즉시 SOURCE_ANALYSIS_BUSY예요. 부모→모든 링크 순으로 행을 잠가 완료·실패·집계를 원자적으로 갱신해요. 중복 접수 이벤트·늦은 성공은 이미 종료한 상태를 덮지 못해요. JSON은 MySQL TEXT에 맞춰 UTF-8 60KiB·최대 50장으로 제한해요.
 
