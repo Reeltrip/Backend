@@ -52,9 +52,12 @@ public class OpenApiConfig {
         tag("user-controller", "회원", "내 정보 (S0-2)");
         tag("source-controller", "링크 분석", "링크를 보내 분석을 시작하고, 링크별 상태와 카드 초안을 받아요 (S1).");
         tag("place-controller", "요약카드", "보관함 카드 저장·조회·수정·삭제 (S2, S3)");
+        tag("image-controller", "사진", "카드에 넣을 사진 올리기 (S2-2, S3-3)");
+        tag("place-search-controller", "장소 검색", "이름으로 현지 주소·좌표 찾기 (S3-3)");
         tag("plan-controller", "여행계획", "계획 만들기·목록·보기·수정·삭제·복제 (S4, S5)");
         tag("plan-edit-controller", "계획 편집", "숙소·구역·일자별 동선 저장, 일자 순서 바꾸기 (S4-3 ~ S4-7)");
         tag("plan-draft-controller", "AI 초안", "AI가 숙소와 일자별 동선을 채워요 (S4-2).");
+        tag("route-controller", "경로", "두 장소 사이 가장 빠른 경로 (S4-7a, S4-7b)");
         tag("plan-share-controller", "공유", "읽기 전용 / 함께 편집 링크 (S4-8)");
     }
 
@@ -73,6 +76,13 @@ public class OpenApiConfig {
             op("GET /sources/{sourceId}", "링크 분석 상태 조회",
                     "링크별 상태(PENDING → ANALYZING → DONE 또는 FAILED)와 카드 초안, 실패 이유를 줘요. "
                             + "FE는 몇 초마다 불러 확인해요. (S1-2, S1-3)"),
+            op("GET /sources", "최근 수집 내역", "내가 보낸 링크 분석 요청을 최신순으로 줘요. (링크 홈)"),
+            op("POST /images", "사진 올리기",
+                    "사진 파일(file)을 올리면 검사 뒤 Cloud Storage에 저장하고 공개 주소를 줘요. 그 주소를 카드의 imageUrl에 넣어요. (S2-2, S3-3)"),
+            op("GET /place-search", "장소 검색",
+                    "장소·도시·구역 이름으로 Google Places를 검색해 현지 주소·좌표를 줘요. 직접 추가 카드와 구역 선택에 써요. (S3-3, S4-4)"),
+            op("GET /routes", "구간 경로",
+                    "두 카드(from, to) 사이 가장 빠른 경로의 소요 시간과 구간(도보·지하철…)을 줘요. 계획을 볼 수 있는 사람만 불러요. (S4-7a, S4-7b)"),
             op("POST /places", "카드 저장 (여러 장)",
                     "S2-1 \"모두 저장\"과 S3-3 직접 추가가 같이 써요. 장소 카드는 사진·주소·좌표가 필수예요. (S2-1, S3-3)"),
             op("GET /places", "보관함 목록",
@@ -119,7 +129,11 @@ public class OpenApiConfig {
             entry("sortType", "정렬. 지금은 LATEST(최신순)만 있어요"),
             entry("owner", "me(내 계획) 또는 shared(공유받은 계획). 비우면 둘 다"),
             entry("status", "DRAFT(작성 중) 또는 COMPLETED(완성). 비우면 전체"),
-            entry("period", "UPCOMING(다가오는 여행) 또는 PAST(지난 여행). 비우면 전체"));
+            entry("period", "UPCOMING(다가오는 여행) 또는 PAST(지난 여행). 비우면 전체"),
+            entry("query", "검색어 (예: 하카타 잇소 후쿠오카)"),
+            entry("from", "출발 카드 id"),
+            entry("to", "도착 카드 id"),
+            entry("departAt", "출발 시각 (ISO 8601, 예: 2026-12-05T10:00:00+09:00). 비우면 지금"));
 
     @Bean
     public OpenAPI wayviOpenApi() {
