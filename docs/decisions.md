@@ -124,3 +124,10 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 기존 BCrypt·JWT·Clock과 인증 DB를 재사용해요. refresh 원문은 무작위 32바이트, DB 값은 SHA-256 해시예요. 기존 컬럼을 유지해요.
 - 재발급은 행 잠금 안에서 이전 해시를 교체하고 로그인 때 정한 14일 만료는 연장하지 않아요. 같은 토큰의 동시 요청은 하나만 성공하고, 교체된 이전 토큰의 재사용은 거부해요.
 - 개발용 로그인은 local + 명시적 opt-in에서만 유지하고 prod에서는 비활성화해요. 호출 방식과 FE 확인 사항은 [auth-login.md](auth-login.md)에 있어요.
+
+## 2026-11-14 S2-1 빈 항목 AI 카드 저장 (BE 2)
+
+- 사용자(BE 2) 결정: `POST /places`에서 AI 카드(`sourceLinkId` 있음) 중 필수 항목이 빈 카드는 빼고 나머지만 저장해요. 뺀 카드는 응답 `skipped`(`index`, `sourceLinkId`, `name`, `missingFields`)로 알려요. Places 보강을 못 한 카드 한 장 때문에 "모두 저장" 전체가 400이 되던 문제를 막아요.
+- 저장된 장소 카드는 지금처럼 항상 사진·주소·좌표가 있어서 지도·계획·AI 초안 코드는 바꾸지 않아요. "장소 카드 필수" 규칙(위 "서버에서 검사할 규칙")은 그대로예요.
+- 직접 추가 카드(S3-3)와 형식 오류는 지금처럼 요청 전체 `400 INVALID_INPUT`이에요. 모든 카드가 빠져도 `201`에 `places: []`예요.
+- 응답 필드 추가라 FE 공유가 필요해요. 기존 `places` 필드는 그대로예요.
