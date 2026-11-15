@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:8080
+@accessToken = REPLACE_WITH_ACCESS_TOKEN
+
+### 기본 10개
+GET {{baseUrl}}/sources
+Authorization: Bearer {{accessToken}}
+
+### 다음 페이지
+GET {{baseUrl}}/sources?page=1&size=10
+Authorization: Bearer {{accessToken}}
+
+### 마지막 페이지를 넘으면 sources는 빈 배열
+GET {{baseUrl}}/sources?page=100000&size=10
+Authorization: Bearer {{accessToken}}
+
+### 허용 크기를 넘으면 400 INVALID_INPUT
+GET {{baseUrl}}/sources?size=101
+Authorization: Bearer {{accessToken}}
+
+### 시작 위치 범위를 넘으면 400 INVALID_INPUT
+GET {{baseUrl}}/sources?page=2147483647&size=100
+Authorization: Bearer {{accessToken}}
+
+### 토큰이 없으면 401 UNAUTHORIZED
+GET {{baseUrl}}/sources

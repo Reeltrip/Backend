@@ -51,6 +51,7 @@ public class OpenApiConfig {
                 "로컬 전용이에요(local 프로필 + DEV_LOGIN_ENABLED=true). 배포 서버에는 없어요.");
         tag("user-controller", "회원", "내 정보 (S0-2)");
         tag("source-controller", "링크 분석", "링크를 보내 분석을 시작하고, 링크별 상태와 카드 초안을 받아요 (S1).");
+        tag("source-history-controller", "수집 내역", "내 최근 링크 수집 내역을 조회해요 (S1 링크 홈).");
         tag("place-controller", "요약카드", "보관함 카드 저장·조회·수정·삭제 (S2, S3)");
         tag("image-controller", "사진", "카드에 넣을 사진 올리기 (S2-2, S3-3)");
         tag("place-search-controller", "장소 검색", "이름으로 현지 주소·좌표 찾기 (S3-3)");
