@@ -1,5 +1,6 @@
 package com.reeltrip.domain.plan.controller;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +36,8 @@ public class PlanController {
 
     /** S4-0 계획 홈(status=DRAFT), S5-1 여행목록(owner·period) */
     @GetMapping("/plans")
-    public PlanListResponse getPlans(@LoginUser Long userId, @Valid @ModelAttribute PlanListRequest request) {
+    public PlanListResponse getPlans(@LoginUser Long userId,
+                                     @ParameterObject @Valid @ModelAttribute PlanListRequest request) {
         return planService.getPlans(userId, request);
     }
 
