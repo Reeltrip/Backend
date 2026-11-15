@@ -152,3 +152,11 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 저장된 장소 카드는 지금처럼 항상 사진·주소·좌표가 있어서 지도·계획·AI 초안 코드는 바꾸지 않아요. "장소 카드 필수" 규칙(위 "서버에서 검사할 규칙")은 그대로예요.
 - 직접 추가 카드(S3-3)와 형식 오류는 지금처럼 요청 전체 `400 INVALID_INPUT`이에요. 모든 카드가 빠져도 `201`에 `places: []`예요.
 - 응답 필드 추가라 FE 공유가 필요해요. 기존 `places` 필드는 그대로예요.
+
+## 2026-11-15 가입·인증번호 메일 (BE 2가 #10·#11·#13 진행)
+
+- 사용자 결정으로 메일 인증까지 포함한 가입을 만들어요. 위 "메일 발송 의존성 보류"를 바꿔 `spring-boot-starter-mail`을 추가하고 Gmail SMTP로 보내요.
+- 계정·앱 비밀번호는 `MAIL_USERNAME`·`MAIL_PASSWORD`(배포는 Secret Manager), 보내는 주소는 `MAIL_FROM`(없으면 `MAIL_USERNAME`). 접속·읽기·쓰기 시간 제한 5초, 실패는 `MAIL_SEND_FAILED`.
+- 메일 서버 상태가 `/actuator/health`를 DOWN으로 만들지 않게 mail health는 꺼요.
+- 비밀번호 재설정 메일(#14)은 이번 범위가 아니에요.
+

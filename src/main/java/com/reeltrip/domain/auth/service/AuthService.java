@@ -5,12 +5,14 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reeltrip.domain.auth.dto.LoginRequest;
 import com.reeltrip.domain.auth.dto.LoginResponse;
+import com.reeltrip.domain.auth.dto.SignupRequest;
 import com.reeltrip.domain.auth.dto.TokenResponse;
 import com.reeltrip.domain.auth.entity.RefreshToken;
 import com.reeltrip.domain.auth.repository.RefreshTokenRepository;
@@ -31,9 +33,11 @@ public class AuthService {
     private final Clock clock;
     private final long refreshTokenDays;
     private final String dummyPasswordHash;
+    private final EmailCodeService emailCodeService;
 
     public AuthService(UserRepository users, RefreshTokenRepository refreshTokens, PasswordEncoder passwordEncoder,
                        JwtProvider jwtProvider, RefreshTokenCodec tokenCodec, Clock clock,
+                       EmailCodeService emailCodeService,
                        @Value("${app.jwt.refresh-token-days}") long refreshTokenDays) {
         if (refreshTokenDays <= 0) {
             throw new IllegalArgumentException("리프레시 토큰 유효기간은 1일 이상이어야 해요.");
@@ -45,6 +49,7 @@ public class AuthService {
         this.tokenCodec = tokenCodec;
         this.clock = clock;
         this.refreshTokenDays = refreshTokenDays;
+        this.emailCodeService = emailCodeService;
         // 없는 이메일도 BCrypt 검사를 거쳐 계정 유무에 따른 응답 시간 차이를 줄여요.
         this.dummyPasswordHash = passwordEncoder.encode(tokenCodec.generate());
     }
@@ -60,6 +65,41 @@ public class AuthService {
         if (user == null || !matches) {
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
+        return issueTokens(user);
+    }
+
+    /** S0-1b 가입. 인증을 마친 이메일만 가입하고 바로 로그인 토큰을 줘요. */
+    @Transactional
+    public LoginResponse signUp(SignupRequest request) {
+        if (!isValidPassword(request.password())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+        emailCodeService.requireVerified(request.email());
+        if (users.existsByEmail(request.email())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+        User user;
+        try {
+            user = users.saveAndFlush(User.create(request.email(), passwordEncoder.encode(request.password()),
+                    request.nickname().strip(), Boolean.TRUE.equals(request.isMarketingAgreed()),
+                    LocalDateTime.now(clock)));
+        } catch (DataIntegrityViolationException e) {
+            // 동시에 같은 이메일로 가입하면 email UNIQUE가 막아요.
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL, e);
+        }
+        emailCodeService.removeCodes(request.email());
+        return issueTokens(user);
+    }
+
+    /** 영문·숫자 포함 8자 이상. BCrypt는 72바이트까지만 보므로 그 이상은 막아요. */
+    private static boolean isValidPassword(String password) {
+        return password.getBytes(StandardCharsets.UTF_8).length <= 72
+                && password.length() >= 8
+                && password.chars().anyMatch(c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+                && password.chars().anyMatch(c -> c >= '0' && c <= '9');
+    }
+
+    private LoginResponse issueTokens(User user) {
         LocalDateTime now = LocalDateTime.now(clock);
         String rawRefreshToken = tokenCodec.generate();
         refreshTokens.save(RefreshToken.create(user, tokenCodec.hash(rawRefreshToken), now, now.plusDays(refreshTokenDays)));
