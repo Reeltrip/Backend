@@ -9,6 +9,31 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  mysql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        ports:
+          - '127.0.0.1:33306:3306'
+        options: >-
+          --health-cmd="mysqladmin ping --silent --protocol=TCP --host=127.0.0.1"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Verify manual schema and MySQL concurrency
+        run: bash scripts/test-mysql-ci.sh
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
