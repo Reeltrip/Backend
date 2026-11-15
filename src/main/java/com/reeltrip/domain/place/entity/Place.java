@@ -1,8 +1,11 @@
 package com.reeltrip.domain.place.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.hibernate.annotations.SQLRestriction;
 
 import com.reeltrip.domain.source.entity.SourceLink;
 import com.reeltrip.domain.user.entity.User;
@@ -24,8 +27,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
-/** 요약카드 (ERD place). 장소 6종과 교통·팁을 한 테이블에 담아요. 교통·팁 전용 컬럼은 장소 카드에서 null. */
+/**
+ * 요약카드 (ERD place). 장소 6종과 교통·팁을 한 테이블에 담아요. 교통·팁 전용 컬럼은 장소 카드에서 null.
+ * 지운 카드는 deleted_at을 채워 휴지통에 둬요(#58). JPA 조회는 모두 휴지통 카드를 빼고 봐요.
+ * 휴지통 목록·복구·완전 삭제만 PlaceTrashRepository의 SQL로 직접 다뤄요.
+ */
 @Entity
+@SQLRestriction("deleted_at IS NULL")
 @Table(name = "place", indexes = {
         @Index(name = "idx_place_user_category", columnList = "user_id, category"),
         @Index(name = "idx_place_user_city", columnList = "user_id, city")
@@ -112,6 +120,10 @@ public class Place extends BaseTimeEntity {
 
     @Column(name = "caution", columnDefinition = "TEXT")
     private String caution;
+
+    /** 휴지통으로 옮긴 시각. null이면 보관함에 있는 카드 */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "place", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
@@ -286,5 +298,14 @@ public class Place extends BaseTimeEntity {
 
     public List<PlaceKeyPoint> getKeyPoints() {
         return keyPoints;
+    }
+
+    /** 휴지통으로 옮겨요(#58). 계획의 노드·플랜B·숙소는 서비스가 먼저 빼요. */
+    public void moveToTrash(LocalDateTime now) {
+        this.deletedAt = now;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
     }
 }

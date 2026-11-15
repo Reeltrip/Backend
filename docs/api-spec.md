@@ -77,7 +77,10 @@
 | 카드 | GET | `/places` | 보관함 목록, 카테고리별 개수 포함 | S3-1 | BE 2 |
 | 카드 | GET | `/places/{placeId}` | 카드 상세 | S3-2 | BE 2 |
 | 카드 | PATCH | `/places/{placeId}` | 카드 수정 | S2-2, S3-2 | BE 2 |
-| 카드 | DELETE | `/places/{placeId}` | 카드 삭제 | S3-2 | BE 2 |
+| 카드 | DELETE | `/places/{placeId}` | 카드 삭제 → 휴지통으로 (2026-11-15 변경) | S3-2 | BE 2 |
+| 카드 | GET | `/places/trash` | 휴지통 목록 (2026-11-15 추가) | Figma 3-3 | BE 2 |
+| 카드 | POST | `/places/trash/restore` | 휴지통에서 복구 (2026-11-15 추가) | Figma 3-3 | BE 2 |
+| 카드 | DELETE | `/places/trash?placeIds=` | 휴지통에서 완전 삭제 (2026-11-15 추가) | Figma 3-3 | BE 2 |
 | 사진 | POST | `/images` | 사진 올리기 → Cloud Storage 주소 | S2-2, S3-3 | BE 1 |
 | 장소 검색 | GET | `/place-search` | 이름 → 현지 주소·좌표·사진 | S3-3 | BE 1 |
 | 계획 | GET | `/plans` | 작성 중인 계획, 내 계획, 공유받은 계획 | S4-0, S5-1 | BE 2 |
@@ -532,7 +535,27 @@ GET /places?latitude=34.6873&longitude=135.5262&radiusM=1500
 
 ### DELETE `/places/{placeId}`
 
-`204`.
+`204`. 카드를 바로 지우지 않고 휴지통으로 옮겨요(#58). 이 카드를 쓰던 계획의 노드·플랜B·숙소는 지금처럼 빼요. 휴지통 카드는 보관함 목록·상세·개수·계획 불러오기·AI 초안·계획에 넣기 어디에도 나오지 않아요(상세·수정·삭제는 `404 PLACE_NOT_FOUND`).
+
+### 휴지통 (Figma 3-2 휴지통 보기 선택, 3-3 휴지통 보기·복원·삭제, 2026-11-15 추가)
+
+`GET /places/trash` → `200`. 최근에 지운 카드부터, 자동으로 비우지 않아요.
+
+```json
+{
+  "places": [
+    { "placeId": 101, "category": "FOOD", "name": "Shin Shin", "address": "福岡市…", "imageUrl": "https://…",
+      "keyPoints": ["돈코츠 라멘"], "deletedAt": "2026-11-15T10:24:00+09:00" }
+  ],
+  "totalCount": 7
+}
+```
+
+`POST /places/trash/restore` `{ "placeIds": [101, 102] }` → `204`. 보관함으로만 돌아오고, 계획에서 빠졌던 자리는 돌아오지 않아요(다시 넣어야 해요).
+
+`DELETE /places/trash?placeIds=101,102` → `204`. 완전히 지워서 되돌릴 수 없어요.
+
+- 복구·삭제는 여러 장을 한 번에 받아요. 내 휴지통에 없는 카드(보관함 카드·남의 카드·없는 id)가 하나라도 섞이면 `404 PLACE_NOT_FOUND`이고 아무것도 바뀌지 않아요. 빈 목록은 `400 INVALID_INPUT`.
 
 ## 사진·장소 검색
 

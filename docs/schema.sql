@@ -100,6 +100,7 @@ CREATE TABLE `place` (
   `caution` TEXT NULL COMMENT '교통·팁 주의',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
+  `deleted_at` DATETIME NULL COMMENT '휴지통으로 옮긴 일시 (NULL이면 보관함, #58)',
   PRIMARY KEY (`place_id`),
   CONSTRAINT `FK_user_TO_place_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `FK_source_link_TO_place_1` FOREIGN KEY (`source_link_id`) REFERENCES `source_link` (`source_link_id`)

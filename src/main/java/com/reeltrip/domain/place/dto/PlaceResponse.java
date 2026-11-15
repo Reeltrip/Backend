@@ -57,7 +57,7 @@ public record PlaceResponse(
         return value == null ? null : value.doubleValue();
     }
 
-    private static OffsetDateTime toSeoul(LocalDateTime value) {
+    static OffsetDateTime toSeoul(LocalDateTime value) {
         // 명세 형식("2026-11-14T10:24:00+09:00")에 맞춰 소수 초는 잘라요
         return value == null ? null
                 : value.truncatedTo(ChronoUnit.SECONDS).atZone(TimeConfig.SEOUL).toOffsetDateTime();
