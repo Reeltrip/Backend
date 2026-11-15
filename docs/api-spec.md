@@ -229,7 +229,9 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 { "email": "traveler@email.com" }
 ```
 
-`200`. 가입 여부와 관계없이 같은 응답입니다. 이메일 형식이 아니면 `400 INVALID_INPUT`.
+`200` 빈 본문. 가입 여부·60초 내 재요청·SMTP 실패·대기열 포화와 관계없이 같은 응답입니다. 이메일 형식이 아니면 `400 INVALID_INPUT`.
+
+2026-11-16: 별도 작업 큐에 먼저 접수해 계정 조회·메일 발송 시간 차이가 응답에 드러나지 않게 해요. 링크는 기존 `SHARE_BASE_URL`의 `/password-reset?token=`을 쓰고 prod에서는 공개 HTTPS FE 주소만 허용해요. 구현·오류·검증은 [password-reset.md](password-reset.md)에 있어요.
 
 ### POST `/auth/password-reset/verify`
 

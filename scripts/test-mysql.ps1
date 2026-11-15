@@ -8,6 +8,7 @@ $previous = @{}
 $databases = [ordered]@{
     REELTRIP_MYSQL_URL = 'reeltrip_issue9'
     REELTRIP_AUTH_MYSQL_URL = 'reeltrip_issue12'
+    REELTRIP_RESET_MYSQL_URL = 'reeltrip_issue14'
     REELTRIP_SOURCE_MYSQL_URL = 'reeltrip_issue16'
     REELTRIP_JOURNEY_MYSQL_URL = 'reeltrip_journey'
     REELTRIP_ANALYSIS_MYSQL_URL = 'reeltrip_analysis'
