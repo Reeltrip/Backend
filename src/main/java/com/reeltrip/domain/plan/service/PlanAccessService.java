@@ -1,5 +1,7 @@
 package com.reeltrip.domain.plan.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -7,9 +9,9 @@ import com.reeltrip.domain.plan.entity.Plan;
 import com.reeltrip.domain.plan.entity.PlanMember;
 import com.reeltrip.domain.plan.entity.PlanRole;
 import com.reeltrip.domain.plan.entity.ShareType;
+import com.reeltrip.domain.plan.repository.PlanMemberJoinRepository;
 import com.reeltrip.domain.plan.repository.PlanMemberRepository;
 import com.reeltrip.domain.plan.repository.PlanRepository;
-import com.reeltrip.domain.user.entity.User;
 import com.reeltrip.domain.user.repository.UserRepository;
 import com.reeltrip.global.exception.BusinessException;
 import com.reeltrip.global.exception.ErrorCode;
@@ -24,12 +26,14 @@ public class PlanAccessService {
 
     private final PlanRepository planRepository;
     private final PlanMemberRepository planMemberRepository;
+    private final PlanMemberJoinRepository planMemberJoinRepository;
     private final UserRepository userRepository;
 
     public PlanAccessService(PlanRepository planRepository, PlanMemberRepository planMemberRepository,
-                             UserRepository userRepository) {
+                             PlanMemberJoinRepository planMemberJoinRepository, UserRepository userRepository) {
         this.planRepository = planRepository;
         this.planMemberRepository = planMemberRepository;
+        this.planMemberJoinRepository = planMemberJoinRepository;
         this.userRepository = userRepository;
     }
 
@@ -53,10 +57,12 @@ public class PlanAccessService {
         if (!plan.isShared()) {
             throw new BusinessException(ErrorCode.PLAN_NOT_FOUND);
         }
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        if (!userRepository.existsById(userId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         PlanRole role = plan.getShareType() == ShareType.EDIT ? PlanRole.EDITOR : PlanRole.VIEWER;
-        plan.addMember(user, role);
+        // 동시에 열어도 한 번만 들어가게 DB에서 "없을 때만 추가"해요(#56). 역할은 공유 종류로 정해져서 누가 넣어도 같아요.
+        planMemberJoinRepository.insertIfAbsent(planId, userId, role.name(), LocalDateTime.now());
         return new PlanAccess(plan, role);
     }
 

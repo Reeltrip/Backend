@@ -54,6 +54,7 @@ CREATE TABLE `source` (
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   PRIMARY KEY (`source_id`),
+  INDEX `idx_source_user_created` (`user_id`, `created_at`),
   CONSTRAINT `FK_user_TO_source_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='링크 분석 요청';
 
@@ -101,6 +102,8 @@ CREATE TABLE `place` (
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
   PRIMARY KEY (`place_id`),
+  INDEX `idx_place_user_category` (`user_id`, `category`),
+  INDEX `idx_place_user_city` (`user_id`, `city`),
   CONSTRAINT `FK_user_TO_place_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`),
   CONSTRAINT `FK_source_link_TO_place_1` FOREIGN KEY (`source_link_id`) REFERENCES `source_link` (`source_link_id`)
 ) COMMENT='요약카드';
@@ -139,6 +142,7 @@ CREATE TABLE `plan_day` (
   `date` DATE NOT NULL COMMENT '날짜',
   `is_completed` TINYINT(1) NOT NULL COMMENT '그 날 완성 여부',
   PRIMARY KEY (`plan_day_id`),
+  CONSTRAINT `uk_plan_day_plan_day_number` UNIQUE (`plan_id`, `day_number`),
   CONSTRAINT `FK_plan_TO_plan_day_1` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`plan_id`)
 ) COMMENT='여행 일자';
 
@@ -158,6 +162,7 @@ CREATE TABLE `plan_stay` (
   `plan_id` BIGINT NOT NULL COMMENT '여행계획 ID',
   `place_id` BIGINT NOT NULL COMMENT '숙소 요약카드 ID',
   PRIMARY KEY (`plan_stay_id`),
+  CONSTRAINT `uk_plan_stay_plan_place` UNIQUE (`plan_id`, `place_id`),
   CONSTRAINT `FK_plan_TO_plan_stay_1` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`plan_id`),
   CONSTRAINT `FK_place_TO_plan_stay_1` FOREIGN KEY (`place_id`) REFERENCES `place` (`place_id`)
 ) COMMENT='계획 숙소';
@@ -170,6 +175,8 @@ CREATE TABLE `plan_node` (
   `order_index` INT NOT NULL COMMENT '그 날의 방문 순서',
   `created_at` DATETIME NOT NULL COMMENT '확정 일시',
   PRIMARY KEY (`plan_node_id`),
+  CONSTRAINT `uk_plan_node_plan_place` UNIQUE (`plan_id`, `place_id`),
+  INDEX `idx_plan_node_day_order` (`plan_day_id`, `order_index`),
   CONSTRAINT `FK_plan_TO_plan_node_1` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`plan_id`),
   CONSTRAINT `FK_plan_day_TO_plan_node_1` FOREIGN KEY (`plan_day_id`) REFERENCES `plan_day` (`plan_day_id`),
   CONSTRAINT `FK_place_TO_plan_node_1` FOREIGN KEY (`place_id`) REFERENCES `place` (`place_id`)
@@ -192,6 +199,7 @@ CREATE TABLE `plan_member` (
   `role` VARCHAR(20) NOT NULL COMMENT 'OWNER, EDITOR, VIEWER',
   `created_at` DATETIME NOT NULL COMMENT '참여 일시',
   PRIMARY KEY (`plan_member_id`),
+  CONSTRAINT `uk_plan_member_plan_user` UNIQUE (`plan_id`, `user_id`),
   CONSTRAINT `FK_plan_TO_plan_member_1` FOREIGN KEY (`plan_id`) REFERENCES `plan` (`plan_id`),
   CONSTRAINT `FK_user_TO_plan_member_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='계획 멤버';
