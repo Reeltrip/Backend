@@ -128,7 +128,7 @@ abstract class JourneyHttpScenario {
         assertThat(card.path("sourceTimestampSec").asInt()).isEqualTo(42);
         assertThat(card.path("latitude").isNull()).isTrue();
         verifyNoInteractions(places);
-        call(HttpMethod.POST, "/places", token, Map.of("places", List.of(card)), 400);
+        assertIncompleteCardNotSaved(token, card);
         card.put("address", "사용자가 확인한 주소").put("latitude", 33.589).put("longitude", 130.4245)
                 .put("imageUrl", "https://example.test/user-upload.jpg");
         ObjectNode otherCard = card.deepCopy();
@@ -157,6 +157,20 @@ abstract class JourneyHttpScenario {
     private User account() {
         return users.save(User.create(UUID.randomUUID() + "@example.test", passwords.encode(PASSWORD),
                 "통합검증", false, LocalDateTime.now()));
+    }
+
+    /** 빈 필수 항목 AI 카드는 저장되지 않아요. #40(빼고 저장) 전에는 400, 뒤에는 201 + skipped로 빠져요. */
+    private void assertIncompleteCardNotSaved(String token, ObjectNode card) {
+        var headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        var response = http.exchange("/places", HttpMethod.POST, new HttpEntity<>(Map.of("places", List.of(card)), headers),
+                JsonNode.class);
+        int status = response.getStatusCode().value();
+        assertThat(status).as("POST /places 빈 항목 카드").isIn(400, 201);
+        if (status == 201) {
+            assertThat(response.getBody().path("places")).isEmpty();
+            assertThat(response.getBody().path("skipped")).hasSize(1);
+        }
     }
 
     private String login(User user) {
