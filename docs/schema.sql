@@ -101,6 +101,7 @@ CREATE TABLE `place` (
   `caution` TEXT NULL COMMENT '교통·팁 주의',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
+  `deleted_at` DATETIME NULL COMMENT '휴지통으로 옮긴 일시 (NULL이면 보관함, #58)',
   PRIMARY KEY (`place_id`),
   INDEX `idx_place_user_category` (`user_id`, `category`),
   INDEX `idx_place_user_city` (`user_id`, `city`),

@@ -98,6 +98,12 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 | 10 | BE 2 에러 코드 | `PLACE_NOT_FOUND` 404 "카드를 찾을 수 없어요.", `PLAN_NOT_FOUND` 404 "계획을 찾을 수 없어요.", `PLAN_DAY_NOT_FOUND` 404 "일자를 찾을 수 없어요.", `DUPLICATE_PLAN_PLACE` 409 "이미 다른 일자에 넣은 장소예요.", `INVALID_PLAN_PLACE` 400 "계획에 넣을 수 없는 카드예요.", `AI_EXTRACTION_FAILED` 500 "링크에서 여행 정보를 찾지 못했어요.". 카드 입력 검사는 `INVALID_INPUT` |
 | 11 | 작은 값 | `radiusM` 기본 1500, `sortType`은 `LATEST`만, `categoryCounts`는 `category` 필터와 관계없이 세고 반경 필터는 적용, 완성 일자가 다시 미완성이 되면 계획을 `DRAFT`로, 시간대 Asia/Seoul(`+09:00`), Gemini 호출당 40초 제한, 테스트 H2는 `NON_KEYWORDS=USER`로 `user` 테이블 이름 유지 |
 
+## 2026-11-15 #58 요약카드 휴지통
+
+- 사용자(BE 2) 결정 A안: `DELETE /places/{placeId}`는 카드를 휴지통으로 옮기고(`place.deleted_at`), 계획의 노드·플랜B·숙소는 지금처럼 빼요(결정 #9 유지). 복구하면 보관함으로만 돌아오고 계획 자리는 돌아오지 않아요. Notion 예외상황의 "계획 재접속 시 삭제된 장소 복구" 대신 Figma의 "계획에 포함된 카드예요, 정말 삭제?" 흐름을 따른 거예요.
+- `Place`에 `@SQLRestriction("deleted_at IS NULL")`을 걸어 JPA 조회는 모두 휴지통 카드를 빼요. 휴지통 목록·복구·완전 삭제만 `PlaceTrashRepository`의 SQL로 다뤄요.
+- 자동으로 비우는 기간은 두지 않아요(Figma에도 없음). 이미 만든 DB는 [sql/003-place-trash.sql](sql/003-place-trash.sql)을 적용해요.
+
 ## 2026-11-13 S4-2 AI 초안
 
 - `POST /plans/{planId}/ai-drafts`를 추가했습니다(요청 본문 없음, `200` + 계획 보기 응답). 자세한 규칙은 `docs/api-spec.md`. FE 합의 필요.

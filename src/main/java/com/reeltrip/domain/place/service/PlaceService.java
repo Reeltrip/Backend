@@ -1,6 +1,7 @@
 package com.reeltrip.domain.place.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -167,7 +168,8 @@ public class PlaceService {
     }
 
     /**
-     * DELETE /places/{placeId}. 이 카드를 쓰는 플랜B·노드·숙소도 같이 지워요(decisions #9).
+     * DELETE /places/{placeId}. 카드는 휴지통으로 옮기고(#58), 이 카드를 쓰는 플랜B·노드·숙소는 지워요(decisions #9).
+     * 복구해도 보관함으로만 돌아오고 계획 자리는 돌아오지 않아요(사용자 결정 A안).
      * Hibernate는 orphan 삭제를 flush 때 큐에 넣어 카드 삭제보다 늦게 보낼 수 있어서 단계마다 flush해요.
      */
     @Transactional
@@ -187,7 +189,7 @@ public class PlaceService {
         }
         placeRepository.flush();
 
-        placeRepository.delete(place);
+        place.moveToTrash(LocalDateTime.now());
     }
 
     /** GET /users/me의 보관함 카드 수 (BE 1이 씀). 교통·팁 포함 */
