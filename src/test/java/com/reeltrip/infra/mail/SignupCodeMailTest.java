@@ -28,6 +28,14 @@ class SignupCodeMailTest {
     }
 
     @Test
+    void HTML_본문은_메일에_함께_넣은_로고_이미지를_쓴다() {
+        SignupCodeMail mail = SignupCodeMail.of("012345", Duration.ofMinutes(5));
+
+        assertThat(mail.html()).contains("src=\"cid:" + SignupCodeMail.LOGO_CONTENT_ID + "\"");
+        assertThat(new org.springframework.core.io.ClassPathResource(SignupCodeMail.LOGO_PATH).exists()).isTrue();
+    }
+
+    @Test
     void HTML을_못_여는_메일_앱을_위한_글자_본문도_있다() {
         SignupCodeMail mail = SignupCodeMail.of("987654", Duration.ofMinutes(5));
 

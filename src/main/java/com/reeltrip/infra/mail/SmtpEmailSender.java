@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -50,6 +51,9 @@ public class SmtpEmailSender implements EmailSender {
             helper.setTo(to);
             helper.setSubject(mail.subject());
             helper.setText(mail.text(), mail.html());
+            // addInline은 setText 뒤에 불러야 본문에 붙어요.
+            helper.addInline(SignupCodeMail.LOGO_CONTENT_ID,
+                    new ClassPathResource(SignupCodeMail.LOGO_PATH), "image/png");
             sender.send(message);
         } catch (MailException | MessagingException | UnsupportedEncodingException e) {
             // 받는 주소·인증번호는 로그에 남기지 않아요.

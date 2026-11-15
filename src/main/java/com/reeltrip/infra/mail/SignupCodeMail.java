@@ -11,6 +11,9 @@ public record SignupCodeMail(String subject, String text, String html) {
 
     private static final Pattern CODE_FORMAT = Pattern.compile("[0-9]{6}");
     private static final String SUBJECT = "[Wayvi] 회원가입 인증번호";
+    // 로고는 외부 주소 대신 메일 안에 넣어(cid) 이미지 서버 없이도 보이게 해요.
+    public static final String LOGO_CONTENT_ID = "wayvi-logo";
+    public static final String LOGO_PATH = "mail/wayvi-logo.png";
 
     public static SignupCodeMail of(String code, Duration validFor) {
         // HTML에 그대로 넣는 값이라 숫자 6자리만 받아요.
@@ -50,12 +53,12 @@ public record SignupCodeMail(String subject, String text, String html) {
                     <td align="center" style="padding:40px 16px;">
                       <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;background:#FFFFFF;border-radius:16px;font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;">
                         <tr>
-                          <td style="padding:32px 32px 0 32px;">
-                            <span style="font-size:22px;font-weight:800;color:#2F6BFF;letter-spacing:-0.5px;">Wayvi</span>
+                          <td align="center" style="padding:28px 32px;background:#2F6BFF;border-radius:16px 16px 0 0;">
+                            <img src="cid:%3$s" width="120" height="31" alt="WAYVI" style="display:block;border:0;width:120px;height:31px;color:#FFFFFF;font-size:22px;font-weight:800;">
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding:24px 32px 0 32px;">
+                          <td style="padding:32px 32px 0 32px;">
                             <p style="margin:0;font-size:20px;font-weight:700;color:#191F28;line-height:1.4;">회원가입 인증번호를 알려 드려요</p>
                             <p style="margin:12px 0 0 0;font-size:15px;color:#4E5968;line-height:1.6;">아래 6자리 숫자를 가입 화면에 입력해 주세요.</p>
                           </td>
@@ -88,6 +91,6 @@ public record SignupCodeMail(String subject, String text, String html) {
                 </table>
                 </body>
                 </html>
-                """.formatted(code, minutes);
+                """.formatted(code, minutes, LOGO_CONTENT_ID);
     }
 }
