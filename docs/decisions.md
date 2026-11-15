@@ -106,6 +106,12 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 새 에러 코드: `AI_DRAFT_NO_PLACES`(400), `AI_DRAFT_FAILED`(500). 문구는 (제안).
 - `GEMINI_API_KEY`가 없으면 링크 분석과 같이 prod는 실패, 그 밖은 가짜 초안(경도 순으로 나누기)을 씁니다.
 
+## 2026-11-15 #56 공유 계획 동시 열기와 schema.sql 제약
+
+- `docs/schema.sql`에 BE 2 테이블 유니크 4개(`plan_day`·`plan_stay`·`plan_node`·`plan_member`)와 인덱스 4개가 빠져 있었어요. prod `validate`는 이걸 검사하지 않아서 서버는 떴고, 공유 계획을 동시에 열면 멤버가 중복돼 그 사람은 계속 500이었어요.
+- schema.sql에 채우고, 이미 만든 DB용으로 [sql/002-be2-unique-indexes.sql](sql/002-be2-unique-indexes.sql)을 추가했어요. `SchemaSqlConstraintTest`가 엔티티의 유니크·인덱스 이름이 schema.sql에 있는지 매번 대조해요(엔티티에 제약을 추가하면 schema.sql도 같이 고쳐야 테스트가 통과해요).
+- 결정 #7 자동 멤버 추가는 `INSERT IGNORE`로 "없을 때만 추가"해요. 동시에 열어도 모두 200이고 멤버는 한 번만 생겨요.
+
 ## 2026-11-14 BE1 개발 방식과 #8 가짜 API
 
 - 사용자 요청으로 #8부터 순서대로 개발하며, 각 이슈에 연결한 `feature/#이슈번호-작업내용` 브랜치를 사용해요. PR도 해당 feature 브랜치에서 main을 대상으로 만들고 다른 BE의 검토를 기다려요.
