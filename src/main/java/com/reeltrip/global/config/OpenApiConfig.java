@@ -63,6 +63,12 @@ public class OpenApiConfig {
 
     /** "메서드 주소" → [요약, 설명] */
     private static final Map<String, String[]> OPERATIONS = Map.ofEntries(
+            op("POST /auth/email-codes", "가입 인증번호 받기",
+                    "6자리 번호를 메일로 보내요. 5분 동안 유효하고 60초 뒤부터 다시 받을 수 있어요. 이미 가입된 이메일은 DUPLICATE_EMAIL, 60초 안 재요청은 EMAIL_CODE_TOO_FREQUENT예요. (S0-1b)"),
+            op("POST /auth/email-codes/verify", "가입 인증번호 확인",
+                    "받은 번호를 확인해요. 틀리면 INVALID_EMAIL_CODE, 5분이 지나면 EMAIL_CODE_EXPIRED, 5번 틀리면 EMAIL_CODE_ATTEMPTS_EXCEEDED예요. 확인 후 30분 안에 가입해요. (S0-1b)"),
+            op("POST /auth/signup", "회원가입",
+                    "인증을 마친 이메일로 가입하고 바로 로그인 토큰을 받아요. 비밀번호는 영문·숫자 포함 8자 이상, 닉네임 1~8자, 필수 약관 2개 동의가 필요해요. (S0-1b)"),
             op("POST /auth/login", "로그인",
                     "이메일·비밀번호로 액세스 토큰과 리프레시 토큰을 받아요. 틀리면 INVALID_LOGIN이에요. (S0-1a)"),
             op("POST /auth/refresh", "토큰 재발급",

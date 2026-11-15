@@ -14,6 +14,18 @@ spring:
       hibernate:
         jdbc:
           time_zone: Asia/Seoul
+  # 가입 인증번호 메일(#10). 기본은 Gmail SMTP, 계정·앱 비밀번호는 환경 변수(배포는 Secret Manager)로만 받아요.
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   jackson:
     time-zone: Asia/Seoul
     serialization:
@@ -31,6 +43,10 @@ springdoc:
     persist-authorization: true
 
 management:
+  # 메일 서버 접속 여부로 서버 health가 DOWN이 되지 않게 해요(배포 검사가 health만 봐요).
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
