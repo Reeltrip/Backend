@@ -109,6 +109,15 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 
 - 사용자 선택으로 `spring-boot-starter-mail` 추가는 보류해요. #10 실제 메일 전송 방식은 이 결정이 바뀌거나 다른 방식이 정해진 뒤 연결해요.
 
+## 2026-11-14 #19 본문 수집 의존성
+
+- 사용자가 `org.jsoup:jsoup:1.24.1`, `org.apache.httpcomponents.client5:httpclient5` 추가를 보류했어요. #19는 새 의존성 없이 JDK의 정적 HTML 파서와 소켓/TLS를 사용해요. 지원 범위·호출 제한·실제 공개 링크 확인 결과는 [fetcher-web.md](fetcher-web.md)에 기록해요.
+
+## 2026-11-14 #22 Places 저장 정책
+
+- 사용자 선택으로 영구 보강은 비활성화한 상태로 코드·테스트만 준비해요. Google 저장 정책·계약 예외와 FE 출처 표시를 확인하기 전 MAPS_PERSIST_ENRICHMENT=false를 유지해요.
+- 2026-11-15 BE 2 결정으로 위 기본값을 바꿨어요: MAPS_PERSIST_ENRICHMENT 기본 true. 보강이 꺼져 있으면 링크 분석 장소 카드에 주소·좌표가 없어 저장·AI 초안·경로에 못 쓰기 때문이에요. Google 정책 확인과 FE 출처 표시는 남은 일이고, 문제가 되면 false로 꺼요. Places 사진을 Storage로 영구 복사하지 않아요. [places-enrichment.md](places-enrichment.md)를 참고해요.
+
 ## 2026-11-14 #12 로그인·재발급 우선 구현
 
 - 사용자 요청으로 메일은 계속 보류하고 #12를 먼저 구현해요. 새 의존성은 없어요.

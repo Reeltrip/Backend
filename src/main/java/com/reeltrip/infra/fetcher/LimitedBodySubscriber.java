@@ -10,14 +10,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 
 /** Content-Length가 없거나 거짓이어도 실제 수신 바이트 수로 제한해요. */
-final class LimitedBodySubscriber implements BodySubscriber<byte[]> {
+public final class LimitedBodySubscriber implements BodySubscriber<byte[]> {
 
     private final int limit;
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final CompletableFuture<byte[]> body = new CompletableFuture<>();
     private Flow.Subscription subscription;
 
-    LimitedBodySubscriber(int limit) {
+    public LimitedBodySubscriber(int limit) {
         this.limit = limit;
     }
 

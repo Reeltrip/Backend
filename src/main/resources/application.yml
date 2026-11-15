@@ -1,5 +1,9 @@
 # 공통 설정. 프로필별 값은 application-local.yml / application-prod.yml
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   application:
     name: reeltrip
   profiles:
@@ -25,6 +29,13 @@ management:
         include: health
 
 app:
+  analysis:
+    enabled: ${ANALYSIS_ENABLED:true}
+    link-timeout: PT90S
+  maps:
+    # 2026-11-15 BE 2 결정: AI는 주소·좌표를 만들지 않아서, 보강을 끄면 링크로 만든 장소 카드를 저장할 수 없어요.
+    # 기본은 켜고, Google 정책 문제로 꺼야 하면 MAPS_PERSIST_ENRICHMENT=false (docs/places-enrichment.md).
+    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:true}
   auth:
     dev-login:
       enabled: ${DEV_LOGIN_ENABLED:false}

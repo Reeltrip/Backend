@@ -9,7 +9,7 @@ FetchedContent content = sourceContentFetcher.fetch(sourceLink.getUrl());
 ExtractionResult result = llmClient.extractCards(content);
 ```
 
-SourceContentFetcher는 플랫폼을 판별하고 등록된 ContentFetcher로 넘겨요. 이번에는 YoutubeContentFetcher만 등록하며, #19·#20에서 다른 플랫폼 수집기를 같은 인터페이스로 추가해요. 분류가 가능해도 아직 수집기가 없는 인스타·블로그·ETC는 SOURCE_FETCH_FAILED예요.
+SourceContentFetcher는 플랫폼을 판별하고 등록된 ContentFetcher로 넘겨요. #18에서는 YoutubeContentFetcher를 등록했고, 후속 #19에서 [네이버·일반 웹 수집기](fetcher-web.md)를 추가해요. 인스타 수집은 #20 범위이며 수집기가 없으면 SOURCE_FETCH_FAILED예요.
 
 유튜브는 원본 url(쿼리·타임스탬프 포함), text=null, 가능한 thumbnailUrl을 반환해요. 자막·설명글·영상 파일을 내려받지 않아요. 기존 GeminiLlmClient가 영상을 입력받고, 카드에 original sourceUrl과 sourceTimestampSec를 채워요. 기존 구현의 쇼츠·단축 URL→watch URL 변환은 그대로 사용해요.
 

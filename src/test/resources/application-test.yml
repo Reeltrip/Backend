@@ -11,6 +11,8 @@ spring:
       ddl-auto: create-drop
 
 app:
+  analysis:
+    enabled: false
   jwt:
     # 테스트용 값. 실제 키가 아니에요.
     secret: test-only-jwt-secret-key-for-reeltrip-0123456789

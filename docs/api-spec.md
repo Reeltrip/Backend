@@ -356,6 +356,8 @@ FE가 몇 초마다 부릅니다.
 
 ### 링크 종류별 내용 가져오기
 
+2026-11-14: #19의 네이버 PostView/mainFrame·일반 웹 정적 본문 수집과 공개 IP 검증은 [fetcher-web.md](fetcher-web.md)에 있어요. 새 의존성 없이 JDK 기본 HTML 파서·소켓을 사용하며, 기존 FetchedContent(text, thumbnailUrl) 계약을 유지해요. Cloud Run 확인과 접수 작업 실행 연결(#23)은 남아 있어요.
+
 2026-11-14: #18의 플랫폼 판별·유튜브 입력·oEmbed 수집 경계와 호출 제한은 [fetcher-youtube.md](fetcher-youtube.md)에 있어요. 일반·쇼츠·youtu.be를 FetchedContent(text=null)로 기존 LlmClient에 넘길 수 있으며, source 작업 실행 연결은 #23에서 해요. 인스타·블로그 수집기는 #19·#20에서 추가해요.
 
 | 종류 | 방법 | 상태 |
