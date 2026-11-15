@@ -33,7 +33,8 @@ import jakarta.persistence.EntityManager;
 /**
  * S4-2 AI 초안. 1단계(여행명·장소·기간)로 만든 계획에 AI가 숙소와 일자별 노드 순서를 채워요.
  * 후보는 계획 만든 사람의 보관함에서 계획 도시의 장소 카드예요(계획 만들 때 불러오는 카드와 같음).
- * 기존 노드·플랜B·숙소는 덮어쓰고, 모든 일자는 미완성·계획은 DRAFT가 돼요.
+ * 기존 노드·플랜B는 덮어쓰고, 모든 일자는 미완성·계획은 DRAFT가 돼요.
+ * 숙소는 사용자가 이미 정해 두었으면(예약한 숙소) 그대로 두고, 비어 있을 때만 AI가 숙소 카드 중에서 골라요.
  */
 @Service
 public class PlanDraftService {
@@ -74,24 +75,33 @@ public class PlanDraftService {
 
     private PlanDraftRequest prepare(Long planId, Long userId) {
         Plan plan = planAccessService.getEditablePlan(planId, userId).plan();
-        List<PlanDraftRequest.Candidate> candidates = placeRepository
+        // 사용자가 미리 정한(예약한) 숙소가 있으면 그 숙소만 숙소 후보로 넘기고, 다른 숙소 카드는 빼요.
+        List<Place> chosenStays = plan.getStays().stream().map(PlanStay::getPlace).toList();
+        boolean hasChosenStays = !chosenStays.isEmpty();
+        List<PlanDraftRequest.Candidate> candidates = new ArrayList<>(placeRepository
                 .findAllByUser_UserIdAndCityAndCategoryIn(plan.getUser().getUserId(), plan.getCity(), PLACE_CATEGORIES)
                 .stream()
                 .filter(place -> place.getLatitude() != null && place.getLongitude() != null)
+                .filter(place -> !hasChosenStays || place.getCategory() != Category.STAY)
                 .sorted(Comparator.comparing(Place::getPlaceId).reversed())
                 .limit(MAX_CANDIDATES)
                 .map(PlanDraftService::toCandidate)
-                .toList();
+                .toList());
         boolean hasNodeCandidate = candidates.stream().anyMatch(c -> c.category() != Category.STAY);
         if (!hasNodeCandidate) {
             throw new BusinessException(ErrorCode.AI_DRAFT_NO_PLACES);
         }
-        return new PlanDraftRequest(plan.getCity(), plan.getDays().size(), candidates);
+        chosenStays.stream().map(PlanDraftService::toCandidate).forEach(candidates::add);
+        List<Long> fixedStayPlaceIds = chosenStays.stream().map(Place::getPlaceId).toList();
+        return new PlanDraftRequest(plan.getCity(), plan.getDays().size(), candidates, fixedStayPlaceIds);
     }
 
     private PlanDetailResponse apply(Long planId, Long userId, PlanDraftResult result) {
         PlanAccess access = planAccessService.getEditablePlan(planId, userId);
         Plan plan = access.plan();
+
+        // 사용자가 정해 둔 숙소는 그대로 두고, 숙소가 비어 있을 때만 AI가 고른 숙소를 넣어요.
+        boolean keepsStays = !plan.getStays().isEmpty();
 
         // plan_node·plan_stay는 (plan_id, place_id) 유니크라, 지운 것을 먼저 DB에 반영한 뒤 새로 넣어요.
         // (Hibernate는 한 번에 보내면 insert를 delete보다 먼저 보내요)
@@ -101,17 +111,15 @@ public class PlanDraftService {
             }
             day.changeCompleted(false);
         }
-        for (PlanStay stay : new ArrayList<>(plan.getStays())) {
-            plan.removeStay(stay);
-        }
         entityManager.flush();
 
-        List<Long> placeIds = new ArrayList<>(result.stayPlaceIds());
+        List<Long> stayPlaceIds = keepsStays ? List.of() : result.stayPlaceIds();
+        List<Long> placeIds = new ArrayList<>(stayPlaceIds);
         result.days().forEach(placeIds::addAll);
         Map<Long, Place> places = placeRepository.findAllByPlaceIdIn(placeIds).stream()
                 .collect(Collectors.toMap(Place::getPlaceId, Function.identity()));
 
-        for (Long placeId : result.stayPlaceIds()) {
+        for (Long placeId : stayPlaceIds) {
             Place place = places.get(placeId);
             if (place != null) {
                 plan.addStay(place);
