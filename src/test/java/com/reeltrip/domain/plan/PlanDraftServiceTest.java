@@ -83,7 +83,7 @@ class PlanDraftServiceTest {
     }
 
     @Test
-    @DisplayName("AI 초안을 만들면 숙소와 일자별 노드가 AI가 정한 순서대로 채워지고 계획은 작성 중으로 남는다.")
+    @DisplayName("AI 초안을 만들면 숙소와 일자별 노드가 AI가 정한 순서대로 채워지고 모든 일자가 완성된 작성 완료 계획이 된다.")
     void createAiDraft_fillsStaysAndNodes() throws Exception {
         // given: AI가 1일차 [관광지, 맛집], 2일차 [카페], 숙소 [호텔]로 짬
         given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
@@ -94,13 +94,37 @@ class PlanDraftServiceTest {
         mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
                 // then: 응답은 계획 보기와 같은 모양
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.stays[0].placeId").value(stay.getPlaceId()))
                 .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(sight.getPlaceId()))
                 .andExpect(jsonPath("$.days[0].nodes[0].orderIndex").value(0))
                 .andExpect(jsonPath("$.days[0].nodes[1].placeId").value(food.getPlaceId()))
                 .andExpect(jsonPath("$.days[1].nodes[0].placeId").value(cafe.getPlaceId()))
-                .andExpect(jsonPath("$.days[0].isCompleted").value(false));
+                .andExpect(jsonPath("$.days[0].isCompleted").value(true))
+                .andExpect(jsonPath("$.days[1].isCompleted").value(true));
+    }
+
+    @Test
+    @DisplayName("AI 초안으로 작성 완료된 계획도 일자를 미완성으로 고치면 다시 작성 중이 된다.")
+    void createAiDraft_thenEditDayIncomplete_backToDraft() throws Exception {
+        // given: AI 초안으로 작성 완료된 계획
+        given(planDraftClient.draftPlan(any())).willReturn(new PlanDraftResult(
+                List.of(), List.of(List.of(food.getPlaceId()), List.of(cafe.getPlaceId()))));
+        mockMvc.perform(post("/plans/{planId}/ai-drafts", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+
+        // when: 1일차를 미완성으로 저장
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/plans/{planId}/days/1", plan.getPlanId()).header("Authorization", token(owner))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"nodes\":[{\"placeId\":" + food.getPlaceId() + ",\"alternativePlaceIds\":[]}],"
+                                + "\"isCompleted\":false}"))
+                .andExpect(status().isOk());
+
+        // then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/plans/{planId}", plan.getPlanId()).header("Authorization", token(owner)))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
     }
 
     @Test
@@ -140,7 +164,7 @@ class PlanDraftServiceTest {
                 .andExpect(jsonPath("$.days[0].nodes.length()").value(1))
                 .andExpect(jsonPath("$.days[0].nodes[0].placeId").value(cafe.getPlaceId()))
                 .andExpect(jsonPath("$.days[1].nodes[1].placeId").value(sight.getPlaceId()))
-                .andExpect(jsonPath("$.days[0].isCompleted").value(false))
+                .andExpect(jsonPath("$.days[0].isCompleted").value(true))
                 .andExpect(jsonPath("$.stays.length()").value(1));
     }
 

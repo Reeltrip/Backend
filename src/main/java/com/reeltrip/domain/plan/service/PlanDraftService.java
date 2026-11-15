@@ -33,7 +33,7 @@ import jakarta.persistence.EntityManager;
 /**
  * S4-2 AI 초안. 1단계(여행명·장소·기간)로 만든 계획에 AI가 숙소와 일자별 노드 순서를 채워요.
  * 후보는 계획 만든 사람의 보관함에서 계획 도시의 장소 카드예요(계획 만들 때 불러오는 카드와 같음).
- * 기존 노드·플랜B는 덮어쓰고, 모든 일자는 미완성·계획은 DRAFT가 돼요.
+ * 기존 노드·플랜B는 덮어쓰고, 모든 일자는 완성·계획은 COMPLETED가 돼요(#60, 바로 계획 완성 보기로 감).
  * 숙소는 사용자가 이미 정해 두었으면(예약한 숙소) 그대로 두고, 비어 있을 때만 AI가 숙소 카드 중에서 골라요.
  */
 @Service
@@ -135,7 +135,9 @@ public class PlanDraftService {
                 }
             }
         }
-        plan.changeStatus(PlanStatus.DRAFT);
+        // AI 초안은 바로 S4-7 계획 완성 보기로 가요(Notion 4-4, 사용자 결정 #60). 일자를 미완성으로 고치면 다시 DRAFT예요.
+        days.forEach(day -> day.changeCompleted(true));
+        plan.changeStatus(PlanStatus.COMPLETED);
         planRepository.flush();
 
         List<Place> tips = placeRepository.findAllByUser_UserIdAndCityAndCategoryIn(
