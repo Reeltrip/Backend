@@ -22,8 +22,7 @@ gcloud secrets list --project="$project" --format='value(name)'
 gcloud iam service-accounts list --project="$project" --format='table(email,disabled)'
 if [[ $# == 2 ]]; then
   # 원본 설정은 화면·파일에 내보내지 않고 허용한 메타데이터만 골라요.
-  config=$(gcloud run services describe "$2" --project="$project" --region="$region" --format=json)
-  jq '{
+  gcloud run services describe "$2" --project="$project" --region="$region" --format=json | jq '{
     service: .metadata.name,
     url: .status.url,
     latestReadyRevision: .status.latestReadyRevisionName,
@@ -42,6 +41,5 @@ if [[ $# == 2 ]]; then
         select(has("value")) | .name]
     }],
     traffic: [.status.traffic[]? | {revisionName, percent, tag}]
-  }' <<< "$config"
-  unset config
+  }'
 fi
