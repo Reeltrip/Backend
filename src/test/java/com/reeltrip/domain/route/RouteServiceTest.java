@@ -23,12 +23,36 @@ class RouteServiceTest {
     }
 
     @Test @DisplayName("기본 출발 시각은 Clock을 쓰고 서울 시각과 도착 시각을 반환한다.")
-    void usesClockAndSeoulTime() {
+    void usesClockAndSeoulTime() throws Exception {
         // given / when
         var result=service.get(1L,2L,3L,null);
         // then
         assertThat(result.departAt().toString()).isEqualTo("2026-11-14T10:00+09:00");
         assertThat(result.arriveAt()).isEqualTo(result.departAt().plusMinutes(18)); assertThat(result.totalMinutes()).isEqualTo(18);
+        verify(provider).route(any(),any(),isNull());
+    }
+
+    @Test @DisplayName("명시한 출발 시각은 초 미만 정밀도까지 그대로 조회하고 응답한다.")
+    void preservesExplicitPrecision() throws Exception {
+        // given
+        var requested=OffsetDateTime.parse("2026-11-20T10:00:00.123456789+09:00");
+        // when
+        var result=service.get(1L,2L,3L,requested);
+        // then
+        verify(provider).route(any(),any(),eq(requested.toInstant()));
+        assertThat(result.departAt()).isEqualTo(requested);
+    }
+
+    @Test @DisplayName("현재 경로와 명시한 같은 분의 경로는 캐시를 공유하지 않는다.")
+    void distinguishesImmediateFromExplicitCache() throws Exception {
+        // given
+        when(provider.cacheable()).thenReturn(true);
+        // when
+        service.get(1L,2L,3L,null);
+        service.get(1L,2L,3L,now.atOffset(ZoneOffset.UTC));
+        // then
+        verify(provider).route(any(),any(),isNull());
+        verify(provider).route(any(),any(),eq(now));
     }
 
     @Test @DisplayName("허용된 제공자만 30초 캐시를 쓰며 캐시 적중이어도 권한을 다시 확인한다.")

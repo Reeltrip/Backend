@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -22,8 +23,9 @@ public class GoogleRoutesClient implements RoutesClient {
     private final BoundedHttp http;
     private final ObjectMapper mapper;
     private final String key;
-    public GoogleRoutesClient(BoundedHttp http,ObjectMapper mapper,@Value("${GOOGLE_MAPS_API_KEY:}") String key) {
-        this.http=http; this.mapper=mapper; this.key=key;
+    private final Clock clock;
+    public GoogleRoutesClient(BoundedHttp http,ObjectMapper mapper,@Value("${GOOGLE_MAPS_API_KEY:}") String key,Clock clock) {
+        this.http=http; this.mapper=mapper; this.key=key; this.clock=clock;
     }
 
     @Override public RouteEstimate route(RouteEstimate.Point from,RouteEstimate.Point to,Instant departure) throws IOException {
@@ -31,12 +33,14 @@ public class GoogleRoutesClient implements RoutesClient {
         var candidates=new ArrayList<RouteEstimate>();
         for(String mode:List.of("TRANSIT","WALK","DRIVE")) {
             if(Thread.currentThread().isInterrupted()) { throw new IOException("경로 요청이 중단됐어요."); }
+            // TRANSIT만 과거 시각을 허용해요. 앞선 호출 중 지난 시각을 DRIVE에 보내지 않아요.
+            if(mode.equals("DRIVE") && departure!=null && !departure.isAfter(clock.instant())) { continue; }
             try {
                 var body=mapper.createObjectNode();
                 body.set("origin",mapper.valueToTree(Map.of("location",Map.of("latLng",from))));
                 body.set("destination",mapper.valueToTree(Map.of("location",Map.of("latLng",to))));
                 body.put("travelMode",mode); body.put("languageCode","ko");
-                if(!mode.equals("WALK")) { body.put("departureTime",departure.toString()); }
+                if(!mode.equals("WALK") && departure!=null) { body.put("departureTime",departure.toString()); }
                 var request=HttpRequest.newBuilder(URI.create("https://routes.googleapis.com/directions/v2:computeRoutes"))
                         .timeout(Duration.ofSeconds(4)).header("X-Goog-Api-Key",key).header("Content-Type","application/json")
                         .header("X-Goog-FieldMask","routes.duration,routes.legs.steps.staticDuration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails")
