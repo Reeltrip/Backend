@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Wayvi 관리자</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script src="/admin/admin.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin/">wayvi<span>관리자</span></a>
+    <div class="top-actions"><span id="admin-name"></span><button id="logout" class="quiet" hidden>로그아웃</button></div>
+  </header>
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <main>
+    <section id="login-panel" class="login-panel">
+      <div class="eyebrow">WAYVI OPERATIONS</div>
+      <h1>시연 준비를 한 곳에서.</h1>
+      <p class="muted">등록된 관리자 계정으로 로그인해 데이터를 관리해요.</p>
+      <form id="login-form">
+        <label>이메일<input id="email" type="email" autocomplete="username" required maxlength="255"></label>
+        <label>비밀번호<input id="password" type="password" autocomplete="current-password" required maxlength="255"></label>
+        <button class="primary" type="submit">관리자 로그인</button>
+      </form>
+      <p class="footnote">로그인 정보는 이 탭에만 유지돼요. 새로고침하거나 탭을 닫으면 다시 로그인해야 해요.</p>
+    </section>
+    <div id="app" class="app" hidden>
+      <aside class="sidebar">
+        <h2>계정 선택</h2>
+        <form id="search-form" class="search">
+          <label class="sr-only" for="user-query">이메일·닉네임·회원 ID 검색</label>
+          <input id="user-query" placeholder="이메일 · 닉네임 · 회원 ID" maxlength="100" type="search">
+          <button type="submit">검색</button>
+        </form>
+        <div id="users" class="users" aria-live="polite"></div>
+        <div class="pager"><button id="users-prev">이전</button><span id="users-page"></span><button id="users-next">다음</button></div>
+      </aside>
+      <section class="workspace">
+        <div id="choose-account" class="empty"><h2>관리할 계정을 선택해 주세요</h2><p>왼쪽 목록에서 링크 분석·카드·여행계획을 확인할 계정을 골라요.</p></div>
+        <div id="account-panel" hidden>
+          <div class="account-heading"><div><div class="eyebrow">SELECTED ACCOUNT</div><h1 id="account-title"></h1><p id="account-meta" class="muted"></p></div><span id="demo-badge" class="badge"></span></div>
+          <nav class="tabs" aria-label="관리 항목">
+            <button data-tab="sources" aria-current="page">링크 분석</button>
+            <button data-tab="places">장소 카드</button>
+            <button data-tab="trash">휴지통</button>
+            <button data-tab="plans">여행계획</button>
+            <button data-tab="demo" id="demo-tab">시연 준비</button>
+          </nav>
+          <div class="content-heading"><h2 id="section-title"></h2><button id="reload" class="quiet">새로고침</button></div>
+          <div id="content" aria-live="polite"></div>
+          <div class="pager" id="data-pager"><button id="data-prev">이전</button><span id="data-page"></span><button id="data-next">다음</button></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <form id="edit-form">
+      <div class="dialog-heading"><h2 id="edit-title">카드 수정</h2><button type="button" data-close="edit-dialog" aria-label="닫기">닫기</button></div>
+      <p id="edit-account" class="muted"></p>
+      <div class="form-grid">
+        <label>이름<input name="name" required maxlength="50"></label>
+        <label>카테고리<select name="category"><option value="FOOD">맛집</option><option value="CAFE">카페</option><option value="STAY">숙소</option><option value="SIGHTSEEING">관광지</option><option value="ACTIVITY">액티비티</option><option value="SHOPPING">쇼핑</option><option value="TRANSPORT">교통</option><option value="TIP">팁</option></select></label>
+        <label class="wide">주소<input name="address" maxlength="255"></label>
+        <label>위도<input name="latitude" type="number" min="-90" max="90" step="any"></label>
+        <label>경도<input name="longitude" type="number" min="-180" max="180" step="any"></label>
+        <label>도시<input name="city" maxlength="100"></label>
+        <label>가격 표시<input name="priceText" maxlength="50"></label>
+        <label class="wide">사진 URL<input name="imageUrl" type="url" maxlength="2048"></label>
+        <label class="wide">핵심 포인트 (최대 3개, 줄로 구분)<textarea name="keyPoints" rows="3"></textarea></label>
+        <label>교통·팁 세부유형<input name="subType" maxlength="30"></label>
+        <label>교통·팁 적용지역<input name="applicableRegion" maxlength="100"></label>
+        <label class="wide">메모<textarea name="memo" rows="2" maxlength="50"></textarea></label>
+      </div>
+      <p class="footnote">계획에 사용 중인 카드의 카테고리는 바꿀 수 없어요. 장소 카드에는 주소·좌표·사진이 필요해요.</p>
+      <div class="dialog-actions"><button type="button" data-close="edit-dialog">취소</button><button type="submit" class="primary" data-write>변경 저장</button></div>
+    </form>
+  </dialog>
+  <dialog id="plan-dialog" aria-labelledby="plan-title">
+    <div class="dialog-heading"><h2 id="plan-title">여행계획 상세</h2><button data-close="plan-dialog">닫기</button></div>
+    <div id="plan-detail"></div>
+  </dialog>
+</body>
+</html>

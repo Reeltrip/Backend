@@ -16,6 +16,12 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청이에요."), // (제안)
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "잠시 후 다시 시도해 주세요."), // (제안)
 
+    ADMIN_FORBIDDEN(HttpStatus.FORBIDDEN, "관리자만 사용할 수 있어요."),
+    ADMIN_DEMO_ONLY(HttpStatus.FORBIDDEN, "지정된 데모 계정에서만 사용할 수 있어요."),
+    ADMIN_OPERATION_BLOCKED(HttpStatus.CONFLICT, "진행 중인 분석이나 다른 계정과 연결된 데이터가 있어요. 미리보기를 다시 확인해 주세요."),
+    ADMIN_PREVIEW_CHANGED(HttpStatus.CONFLICT, "초기화 대상이 바뀌었어요. 미리보기를 다시 확인해 주세요."),
+    ADMIN_DEMO_NOT_EMPTY(HttpStatus.CONFLICT, "샘플은 데이터가 없는 데모 계정에만 만들 수 있어요."),
+
     // BE 1: 인증·링크
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일이에요. 로그인해 주세요."),
     INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST, "인증번호를 다시 확인해 주세요."),

@@ -2,6 +2,10 @@
 
 Java 21 · Spring Boot 3 · MySQL 8이에요. 작업 규칙은 [AGENTS.md](AGENTS.md), 최신 결정은 [docs/decisions.md](docs/decisions.md)를 따라요.
 
+## 관리자 화면
+
+`/admin/`에서 계정별 링크 분석·카드·휴지통·여행계획을 관리해요. `ADMIN_USER_IDS`에 등록된 회원만 API에 접근하며, `DEMO_USER_IDS`로 따로 지정한 계정만 초기화·샘플 생성을 할 수 있어요. 둘 다 기본값은 빈 목록이에요. [설정·API·초기화 범위](docs/admin.md)를 먼저 확인해요.
+
 ## 로컬
 
 1. Java 21과 MySQL을 준비하고 빈 개발 DB에 [schema.sql](docs/schema.sql)을 수동 적용해요.
