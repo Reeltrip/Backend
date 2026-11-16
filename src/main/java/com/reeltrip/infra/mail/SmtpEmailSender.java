@@ -59,9 +59,7 @@ public class SmtpEmailSender implements EmailSender {
             helper.setTo(to);
             helper.setSubject(mail.subject());
             helper.setText(mail.text(), mail.html());
-            // addInline은 setText 뒤에 불러야 본문에 붙어요.
-            helper.addInline(SignupCodeMail.LOGO_CONTENT_ID,
-                    new ClassPathResource(SignupCodeMail.LOGO_PATH), "image/png");
+            addLogo(helper);
             sender.send(message);
         } catch (MailException | MessagingException | UnsupportedEncodingException e) {
             // 받는 주소·인증번호는 로그에 남기지 않아요.
@@ -84,18 +82,23 @@ public class SmtpEmailSender implements EmailSender {
                 throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
             }
             String url = shareBaseUrl.replaceAll("/+$", "") + "/password-reset?token=" + token;
+            PasswordResetMail mail = PasswordResetMail.of(url, validFor);
             MimeMessage message = sender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(from, SENDER_NAME);
             helper.setTo(to);
-            helper.setSubject("[Wayvi] 비밀번호 재설정");
-            helper.setText("Wayvi 비밀번호 재설정 링크예요.\n\n" + url + "\n\n"
-                    + validFor.toMinutes() + "분 안에 새 비밀번호를 정해 주세요. 한 번만 사용할 수 있어요.\n"
-                    + "요청하지 않았다면 이 메일을 무시해 주세요.");
+            helper.setSubject(mail.subject());
+            helper.setText(mail.text(), mail.html());
+            addLogo(helper);
             sender.send(message);
         } catch (MailException | MessagingException | UnsupportedEncodingException | IllegalArgumentException error) {
             log.warn("재설정 메일 발송 실패: {}", error.getClass().getSimpleName());
             throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
         }
+    }
+
+    private static void addLogo(MimeMessageHelper helper) throws MessagingException {
+        // addInline은 setText 뒤에 불러야 본문에 붙어요.
+        helper.addInline(MailLayout.LOGO_CONTENT_ID, new ClassPathResource(MailLayout.LOGO_PATH), "image/png");
     }
 }
