@@ -94,7 +94,7 @@ public class OpenApiConfig {
             op("POST /images", "사진 올리기",
                     "사진 파일(file)을 올리면 검사 뒤 Cloud Storage에 저장하고 공개 주소를 줘요. 그 주소를 카드의 imageUrl에 넣어요. (S2-2, S3-3)"),
             op("GET /place-search", "장소 검색",
-                    "장소·도시·구역 이름으로 Google Places를 검색해 현지 주소·좌표를 줘요. 직접 추가 카드와 구역 선택에 써요. (S3-3, S4-4)"),
+                    "장소·도시·구역 이름을 query(1~200자, 공백만 입력 불가)로 검색해 places 배열을 받아요. 결과 없음은200 빈 배열이에요. googlePlaceId·이름·좌표를 선택 상태에 함께 보관해요. 주소·imageUrl·googleMapsUri는 null일 수 있고 imageUrl은 현재 미제공이에요. 출처 표시는 attributionText·attributions를 함께 사용해요. (S3-3, S4-2, S4-4)"),
             op("GET /routes", "구간 경로",
                     "두 카드(from, to) 사이 가장 빠른 경로의 소요 시간과 구간(도보·지하철…)을 줘요. 계획을 볼 수 있는 사람만 불러요. (S4-7a, S4-7b)"),
             op("POST /places", "카드 저장 (여러 장)",
