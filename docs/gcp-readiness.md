@@ -35,7 +35,7 @@
 | GEMINI_API_KEY / GEMINI_MODEL | 키는 Secret, 모델은 일반 값. 실제 모델의 지역·할당량·지원 여부 확인 |
 | GOOGLE_MAPS_API_KEY | Secret. Places API (New)·Routes API만 허용, API별 일일 한도·예산 알림 설정 |
 | GCS_BUCKET | 승인된 업로드 버킷 이름. 런타임은 metadata 토큰으로 쓰고 GCP_ACCESS_TOKEN은 비움 |
-| CORS_ALLOWED_ORIGINS / SHARE_BASE_URL | 실제 HTTPS FE 주소. 와일드카드 대신 명시한 origin |
+| CORS_ALLOWED_ORIGINS / SHARE_BASE_URL | 실제 HTTPS FE 주소. 와일드카드 대신 명시한 origin. 2026-11-16 `https://frontdoor-eight-gray.vercel.app`로 설정 |
 | MAPS_PERSIST_ENRICHMENT | true(기본, 2026-11-15 BE 2 결정). 꺼지면 링크 분석 장소 카드가 저장되지 않아요. Google 저장 정책 문제로 꺼야 하면 false |
 | MAIL_USERNAME / MAIL_PASSWORD / MAIL_FROM | 가입 인증번호용 Gmail 계정·앱 비밀번호는 Secret, 보내는 주소는 일반 값 (2026-11-15) |
 
