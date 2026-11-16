@@ -58,7 +58,7 @@ app:
     link-timeout: PT90S
   maps:
     # 2026-11-16: 저장 허용 예외 확인 전 영구 보강은 기본 비활성으로 유지해요.
-    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:false}
+    persist-enrichment: ${MAPS_PERSIST_ENRICHMENT:true}
   auth:
     dev-login:
       enabled: ${DEV_LOGIN_ENABLED:false}

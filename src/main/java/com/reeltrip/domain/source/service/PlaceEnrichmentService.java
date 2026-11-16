@@ -22,7 +22,7 @@ public class PlaceEnrichmentService {
     private final PlacesClient places;
     private final boolean enabled;
     // AI는 주소·좌표를 만들지 않아서(LLM이 지어낸 주소 방지) 보강이 꺼져 있으면 장소 카드를 저장할 수 없어요. 그래서 기본은 켬.
-    public PlaceEnrichmentService(PlacesClient places,@Value("${app.maps.persist-enrichment:false}") boolean enabled) {
+    public PlaceEnrichmentService(PlacesClient places,@Value("${app.maps.persist-enrichment:true}") boolean enabled) {
         this.places=places; this.enabled=enabled;
     }
 
