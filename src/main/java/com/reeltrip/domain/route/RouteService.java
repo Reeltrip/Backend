@@ -24,8 +24,9 @@ public class RouteService {
 
     public Response get(Long userId,Long from,Long to,OffsetDateTime requested) {
         var start=access.point(userId,from); var end=access.point(userId,to);
-        var departure=(requested==null?clock.instant():requested.toInstant()).atZone(TimeConfig.SEOUL).toOffsetDateTime().truncatedTo(ChronoUnit.SECONDS);
-        var key=new Key(userId,from,to,start,end,departure.toInstant().truncatedTo(ChronoUnit.MINUTES));
+        var departure=(requested==null?clock.instant().truncatedTo(ChronoUnit.SECONDS):requested.toInstant())
+                .atZone(TimeConfig.SEOUL).toOffsetDateTime();
+        var key=new Key(userId,from,to,start,end,departure.toInstant().truncatedTo(ChronoUnit.MINUTES),requested==null);
         RouteEstimate estimate=null;
         if(routes.cacheable()) {
             synchronized(cache) {
@@ -34,7 +35,7 @@ public class RouteService {
             }
         }
         if(estimate==null) {
-            try { estimate=routes.route(start,end,departure.toInstant()); }
+            try { estimate=routes.route(start,end,requested==null?null:requested.toInstant()); }
             catch(IOException | RuntimeException e) { throw new BusinessException(ErrorCode.ROUTE_NOT_FOUND); }
             if(routes.cacheable()) {
                 synchronized(cache) {
@@ -46,6 +47,6 @@ public class RouteService {
         return new Response(GoogleRoutesClient.minutes(estimate.duration()),departure,departure.plus(estimate.duration()),estimate.segments());
     }
     public record Response(int totalMinutes,OffsetDateTime departAt,OffsetDateTime arriveAt,List<RouteEstimate.Segment> segments) { }
-    private record Key(Long userId,Long from,Long to,RouteEstimate.Point start,RouteEstimate.Point end,Instant minute) { }
+    private record Key(Long userId,Long from,Long to,RouteEstimate.Point start,RouteEstimate.Point end,Instant minute,boolean immediate) { }
     private record Cached(RouteEstimate estimate,Instant expires) { }
 }
