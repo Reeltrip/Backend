@@ -48,7 +48,7 @@ public class InstagramCaptionFetcher implements ContentFetcher {
                     caption = caption.substring(quote + 3, caption.length() - 1);
                 }
             }
-            if (caption == null || caption.isBlank() || caption.matches("(?is)^(log in to instagram|sign up.*instagram|see instagram photos|instagram에 로그인|로그인하여|[0-9., kmb]+ likes).*")) {
+            if (caption == null || caption.isBlank() || caption.matches("(?is)^(log in to instagram|sign up.*instagram|create an account.*instagram|see instagram photos|instagram에 로그인|instagram에 가입|로그인하여|[0-9., kmb]+ likes).*")) {
                 throw new IOException("공개 캡션이 없어요.");
             }
             caption = caption.strip();
@@ -57,6 +57,7 @@ public class InstagramCaptionFetcher implements ContentFetcher {
                 caption = caption.substring(0, end);
             }
             String thumbnail = meta.thumbnail() == null ? null : web.thumbnail(meta.thumbnail(), page.uri(), deadline);
+            deadline.millis(10_000);
             return new FetchedContent(Platform.INSTAGRAM, url, caption, thumbnail);
         } catch (IOException | RuntimeException e) {
             throw new BusinessException(ErrorCode.SOURCE_FETCH_FAILED);
