@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-labelledby="title desc">
+  <title id="title">Wayvi 시연용 장소 이미지</title>
+  <desc id="desc">실제 장소 사진이 아닌 시연용 여행 일러스트</desc>
+  <rect width="800" height="500" fill="#e7f3e8"/>
+  <circle cx="634" cy="106" r="44" fill="#f6d580"/>
+  <path d="M0 410 190 180 350 370 480 230 800 440V500H0Z" fill="#9cc8ad"/>
+  <path d="M0 480 280 300 480 480 650 340 800 470V500H0Z" fill="#4a8d70"/>
+  <rect x="72" y="58" width="228" height="54" rx="27" fill="#fff"/>
+  <text x="186" y="93" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="700" fill="#23644b">WAYVI · DEMO</text>
+  <path d="M410 130a64 64 0 0 0-64 64c0 48 64 109 64 109s64-61 64-109a64 64 0 0 0-64-64Z" fill="#23644b"/>
+  <circle cx="410" cy="193" r="23" fill="#fff"/>
+</svg>
