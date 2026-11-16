@@ -31,8 +31,30 @@ gcloud run services update-traffic SERVICE --project=PROJECT --region=asia-north
 
 승인된 운영자는 같은 동작을 `bash scripts/rollback-cloud-run.sh PROJECT SERVICE PREVIOUS_REVISION`으로 실행할 수 있어요. 이 명령은 **실제 운영 트래픽을 바꿔요.** 프로젝트·서비스·직전 SHA와 DB/Secret 호환성을 검토한 뒤 실행해요. 스크립트는 대상 revision이 같은 서비스의 READY 상태인지 먼저 확인하고, 현재 트래픽의 revision/비율만 기록한 뒤 지정 revision에 100% 전환해요. 공개 서비스 health UP을 확인하며 실패하면 비정상 종료하고 추가 자동 전환은 하지 않아요. 기존 분할 트래픽을 그대로 복원하려면 위 gcloud 명령에 각 비율을 직접 지정해요.
 
-사용자 요청으로 추가 테스트·실제 롤백·운영 변경을 실행하지 않았어요. 이번 확인 범위는 bash 문법과 workflow 정적 검사뿐이에요. FE 주소·운영 환경 변수 변경 기록은 별도 PR #68을 참고해요. 이 PR은 새 환경 변수·Secret·IAM·DB를 만들거나 바꾸지 않아요.
+사용자 요청으로 추가 테스트·실제 롤백·운영 변경을 실행하지 않았어요. 이번 확인 범위는 bash 문법과 workflow 정적 검사뿐이에요. FE 주소·운영 환경 변수 변경은 아래 "운영 환경 변수 바꾸기"를 참고해요. 이 PR은 새 환경 변수·Secret·IAM·DB를 만들거나 바꾸지 않아요.
 
-Secret 교체는 새 버전을 만들고 승인 후 기존 서비스의 해당 환경 변수 참조만 새 **고정 버전**으로 바꿔 새 revision을 만들어요. 전체 환경 변수를 덮어쓰거나 latest를 사용하지 않아요. 메일은 계속 보류, MAPS_PERSIST_ENRICHMENT는 true(기본)예요.
+Secret 교체는 새 버전을 만들고 승인 후 기존 서비스의 해당 환경 변수 참조만 새 **고정 버전**으로 바꿔 새 revision을 만들어요. 전체 환경 변수를 덮어쓰거나 latest를 사용하지 않아요.
+
+## 운영 환경 변수 바꾸기 (2026-11-16 확인)
+
+배포가 트래픽을 특정 revision에 고정해 둬서, 환경 변수만 바꾸면 새 revision이 생겨도 **트래픽은 0%**예요. 바꾼 뒤 새 revision이 READY인지 보고 트래픽을 넘겨요. 다음 자동 배포는 바뀐 환경 변수를 그대로 이어받아요.
+
+```bash
+gcloud run services update SERVICE --project=PROJECT --region=asia-northeast3 --container=app --update-env-vars=KEY=VALUE
+gcloud run services update-traffic SERVICE --project=PROJECT --region=asia-northeast3 --to-revisions=NEW_REVISION=100
+```
+
+`gcloud run services replace`로 오래된 yaml을 적용하면 이미지까지 예전 것으로 돌아가요. yaml을 쓸 때는 `describe --format export`로 지금 값을 먼저 받아요.
+
+현재 운영 값(비밀 제외):
+
+| 변수 | 값 |
+| --- | --- |
+| CORS_ALLOWED_ORIGINS | `https://frontdoor-eight-gray.vercel.app` (`http://localhost:5173`은 코드가 항상 허용) |
+| SHARE_BASE_URL | `https://frontdoor-eight-gray.vercel.app` (공유 `/plan/{planId}`, 재설정 `/password-reset?token=`) |
+| MAPS_PERSIST_ENRICHMENT | `true` |
+| MAIL_USERNAME / MAIL_PASSWORD | Secret Manager 버전 1 (Wayvi 전용 Gmail 앱 비밀번호) |
+
+Vercel 미리보기 주소는 허용하지 않았어요. 필요하면 FE 프로젝트 이름으로 좁힌 패턴을 CORS_ALLOWED_ORIGINS에 쉼표로 더해요.
 
 공식 근거: [gcloud run deploy](https://cloud.google.com/sdk/gcloud/reference/run/deploy), [트래픽·롤백](https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration), [GitHub WIF 인증](https://github.com/google-github-actions/auth). 2026-11-14 확인했어요.
