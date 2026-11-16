@@ -35,7 +35,9 @@ class PasswordResetSmtpTest {
         verify(smtp).send(message);
         assertThat(message.getSubject()).isEqualTo("[Wayvi] 비밀번호 재설정");
         assertThat(((InternetAddress)message.getFrom()[0]).getPersonal()).isEqualTo("Wayvi");
-        assertThat(message.getContent().toString()).contains("https://front.example.test/password-reset?token="+TOKEN,"30분");
+        // 글자 본문과 HTML 본문 모두에 링크와 유효 시간이 있어야 해요.
+        assertThat(texts(message)).hasSize(2).allSatisfy(body->
+                assertThat(body).contains("https://front.example.test/password-reset?token="+TOKEN,"30분"));
     }
 
     @Test @DisplayName("SMTP 예외 속 링크·계정은 로그나 상위 예외에 노출하지 않는다.")
@@ -73,6 +75,15 @@ class PasswordResetSmtpTest {
         sender(smtp,"http://localhost:5173","local").sendPasswordReset("receiver@example.test",TOKEN,Duration.ofMinutes(30));
         // then
         verify(smtp).send(any(MimeMessage.class));
+    }
+
+    private static java.util.List<String> texts(jakarta.mail.Part part) throws Exception {
+        var found=new java.util.ArrayList<String>();
+        // 보내기 전 메시지는 머리글이 아직 안 정해져서 내용 모양으로 먼저 나눠요.
+        if (part.getContent() instanceof jakarta.mail.Multipart multipart) {
+            for (int i=0;i<multipart.getCount();i++) { found.addAll(texts(multipart.getBodyPart(i))); }
+        } else if (part.getContent() instanceof String text) { found.add(text); }
+        return found;
     }
 
     private SmtpEmailSender sender(JavaMailSender smtp,String base,String profile) {

@@ -31,8 +31,8 @@ class SignupCodeMailTest {
     void HTML_본문은_메일에_함께_넣은_로고_이미지를_쓴다() {
         SignupCodeMail mail = SignupCodeMail.of("012345", Duration.ofMinutes(5));
 
-        assertThat(mail.html()).contains("src=\"cid:" + SignupCodeMail.LOGO_CONTENT_ID + "\"");
-        assertThat(new org.springframework.core.io.ClassPathResource(SignupCodeMail.LOGO_PATH).exists()).isTrue();
+        assertThat(mail.html()).contains("src=\"cid:" + MailLayout.LOGO_CONTENT_ID + "\"");
+        assertThat(new org.springframework.core.io.ClassPathResource(MailLayout.LOGO_PATH).exists()).isTrue();
     }
 
     @Test
