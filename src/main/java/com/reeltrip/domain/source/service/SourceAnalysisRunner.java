@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.reeltrip.global.config.AsyncConfig;
 import com.reeltrip.global.exception.BusinessException;
 import com.reeltrip.global.exception.ErrorCode;
@@ -19,6 +21,7 @@ import jakarta.annotation.PreDestroy;
 
 @Component
 public class SourceAnalysisRunner {
+    private static final Logger log=LoggerFactory.getLogger(SourceAnalysisRunner.class);
     private final AnalysisStateService state;
     private final SourceContentFetcher fetcher;
     private final LlmClient llm;
@@ -49,8 +52,13 @@ public class SourceAnalysisRunner {
                 var content=fetcher.fetch(work.url());
                 var result=llm.extractCards(content);
                 state.complete(id,enrichment.enrich(id,content,result));
-            } catch(BusinessException e) { state.fail(id,e.getErrorCode()); }
-            catch(Exception e) { state.fail(id,ErrorCode.SOURCE_ANALYSIS_FAILED); }
+            } catch(BusinessException e) {
+                log.warn("링크 분석 실패: sourceLinkId={}, code={}, type={}",id,e.getErrorCode().name(),e.getClass().getSimpleName());
+                state.fail(id,e.getErrorCode());
+            } catch(Exception e) {
+                log.warn("링크 분석 실패: sourceLinkId={}, code={}, type={}",id,ErrorCode.SOURCE_ANALYSIS_FAILED.name(),e.getClass().getSimpleName());
+                state.fail(id,ErrorCode.SOURCE_ANALYSIS_FAILED);
+            }
             finally { jobs.remove(id,reference.get()); }
             return null;
         });

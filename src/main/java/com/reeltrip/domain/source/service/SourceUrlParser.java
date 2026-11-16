@@ -28,7 +28,7 @@ public class SourceUrlParser {
             String host = uri.getHost().toLowerCase(Locale.ROOT);
             Platform platform = isHost(host, "youtube.com") || isHost(host, "youtu.be") ? Platform.YOUTUBE
                     : isHost(host, "instagram.com") ? Platform.INSTAGRAM
-                    : isHost(host, "blog.naver.com") ? Platform.NAVER_BLOG : Platform.ETC;
+                    : isHost(host, "blog.naver.com") || host.equals("naver.me") ? Platform.NAVER_BLOG : Platform.ETC;
             return new ParsedUrl(url, platform);
         } catch (IllegalArgumentException error) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);

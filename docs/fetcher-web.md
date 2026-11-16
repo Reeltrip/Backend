@@ -57,8 +57,16 @@ S1-2 / S1-3의 수집 단계에서 네이버 블로그와 일반 웹의 정적 �
 
 ### 남은 확인
 
-- [ ] Cloud Run에서 같은 공개 링크와 비공개·삭제 글의 실제 응답을 확인해요. 현재 저장소에서 호출할 배포 URL이 확인되지 않아 배포 환경 검증은 하지 못했어요. 배포 설정도 변경하지 않았어요.
-- [ ] #23에서 접수 작업에 sourceContentFetcher.fetch → LlmClient.extractCards → 초안 저장·링크별 상태 처리를 연결해요. 이 PR만으로 POST /sources의 분석이 시작되지는 않아요.
-- [ ] #18(PR #37)을 먼저 병합한 뒤 이 PR의 기준을 main으로 변경하고 병합해요. 현재는 선행 feature 브랜치 기준으로 #19 변경분만 검토해요.
+- [ ] Cloud Run에서 공개 링크와 비공개·삭제 글의 실제 응답 확인은 남아 있어요. 운영 URL은 확인됐지만 2026-11-16 사용자 요청으로 추가 테스트·운영 실호출을 생략해요.
+- [x] #23의 접수 커밋 → 수집 → LLM → 초안 저장·링크별 상태 연결은 main에 반영됐어요.
+- [x] 기존 #19 구현은 PR #53으로 main에 반영됐어요. 후속 보완은 별도 feature 브랜치에서 main 대상으로 올려요.
+
+### 2026-11-16 네이버 단축 링크 보완
+
+`https://naver.me/{code}`를 NAVER_BLOG로 분류해요. 단축 링크의 추적 query를 전달하지 않고 HTTPS로 해석하며 각 redirect는 DNS 조회·접속 전에 naver.me 또는 유효한 blog.naver.com / m.blog.naver.com 글인지 검사해요. 처음 확인된 블로그 글과 다른 글로 다시 이동하면 실패해요. 기존 내부 주소 차단·검증 IP 고정·최대3 redirect·10초 전체 제한을 그대로 사용해요.
+
+네이버 지도·카페 등 블로그 외 대상으로 가는 단축 링크, 로그인·JS 이동만 있는 페이지는 SOURCE_FETCH_FAILED예요. 최종 본문은 블로그 파서를 사용하고 결과의 sourceUrl은 입력한 단축 원문으로 유지해요. 기존 긴 글 주소 동작·API·DB·새 의존성 변경은 없어요. 추가 테스트 실행과 실제 단축 링크 호출은 사용자 요청으로 생략했어요.
+
+분석 실패 로그에는 sourceLinkId·오류 코드·예외 종류만 남겨요. URL·본문·API 키·예외 메시지와 전체 스택은 남기지 않아요. 운영 실링크 검증을 다시 진행할 때 해당 ID의 DB 상태와 함께 확인할 수 있어요.
 
 참고: [JDK HTML 파서](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/text/html/parser/ParserDelegator.html), [IP 주소 소켓 연결](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Socket.html), [TLS 호스트 검증·SNI](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/javax/net/ssl/SSLParameters.html).

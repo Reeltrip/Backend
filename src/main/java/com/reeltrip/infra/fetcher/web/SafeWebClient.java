@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 import org.springframework.stereotype.Component;
 
@@ -20,10 +21,16 @@ public class SafeWebClient {
     }
 
     Page fetch(URI original, FetchDeadline deadline) throws IOException {
+        return fetch(original, deadline, uri -> true);
+    }
+
+    Page fetch(URI original, FetchDeadline deadline, Predicate<URI> allowedTarget) throws IOException {
         URI current = original;
         var visited = new HashSet<URI>();
         for (int hop = 0; hop <= 3; hop++) {
             current = PublicNetworkPolicy.parse(current.toString());
+            // 제한된 단축 링크는 DNS 조회·접속 전에 이동 대상을 검사해요.
+            if (!allowedTarget.test(current)) { throw new IOException("허용하지 않은 이동 주소예요."); }
             if (!visited.add(current.normalize())) {
                 throw new IOException("리디렉션이 반복돼요.");
             }
