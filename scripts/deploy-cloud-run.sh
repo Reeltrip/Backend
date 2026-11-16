@@ -10,7 +10,8 @@ image="$registry/$GCP_PROJECT_ID/$AR_REPOSITORY/backend:$IMAGE_SHA"
 tag="verify-${IMAGE_SHA:0:12}"
 
 # 첫 서비스·IAM·Secret·SQL 연결은 #27에서 승인한 설정을 먼저 준비해요.
-before=$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json)
+before=$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json |
+  jq '{spec: {template: {spec: {containers: [.spec.template.spec.containers[] | {name}]}}}, status: {traffic: .status.traffic}}')
 jq -e --arg name "$CLOUD_RUN_CONTAINER" '.spec.template.spec.containers[] | select(.name == $name)' <<< "$before" >/dev/null
 previous=$(jq -c '.status.traffic | map({revisionName,percent}) | map(select(.percent > 0))' <<< "$before")
 gcloud auth configure-docker "$registry" --quiet
@@ -22,7 +23,8 @@ pinned="${image%:*}@$digest"
 gcloud run deploy "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
   --revision-suffix="sha-${IMAGE_SHA:0:12}" --no-traffic --tag="$tag" --quiet \
   --container="$CLOUD_RUN_CONTAINER" --image="$pinned"
-after=$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json)
+after=$(gcloud run services describe "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --format=json |
+  jq '{status: {traffic: .status.traffic}}')
 revision=$(jq -er --arg tag "$tag" '.status.traffic[] | select(.tag == $tag) | .revisionName' <<< "$after")
 url=$(jq -er --arg tag "$tag" '.status.traffic[] | select(.tag == $tag) | .url' <<< "$after")
 [[ $revision == "$CLOUD_RUN_SERVICE-sha-${IMAGE_SHA:0:12}" ]]
@@ -39,7 +41,8 @@ if [[ $healthy != true ]]; then
   echo '후보 revision의 health 실패: 기존 트래픽을 유지해요. 후보와 로그를 확인해요.' >&2
   exit 1
 fi
-gcloud run services update-traffic "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" --to-revisions="$revision=100" --quiet
+gcloud run services update-traffic "$CLOUD_RUN_SERVICE" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+  --to-revisions="$revision=100" --remove-tags="$tag" --quiet
 if [[ -n ${GITHUB_STEP_SUMMARY:-} ]]; then
   {
     printf 'Commit: `%s`\n\nImage: `%s`\n\nRevision: `%s`\n\nPrevious traffic: `%s`\n' "$IMAGE_SHA" "$pinned" "$revision" "$previous"

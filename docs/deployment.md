@@ -17,6 +17,8 @@
 
 Actions summary에는 SHA·digest·revision·이전 트래픽만 남겨요. 환경 값·토큰·Secret 본문은 출력하지 않아요. 배포 직후 로그인·refresh·분석·Storage·CORS까지 확인하고 health UP만으로 전체 기능 성공을 판단하지 않아요.
 
+2026-11-16 보완: 성공한 후보를 revision 이름으로 100% 승격할 때 그 배포의 verify-SHA 태그만 함께 제거해요. 실패한 후보 태그는 원인 확인용으로 남기며, 이전 배포의 태그나 다른 용도의 태그를 일괄 삭제하지 않아요. 원본 서비스 설정은 jq로 필요한 컨테이너 이름·트래픽만 고른 뒤 사용해 환경 변수 값이 셸 변수에 섞이지 않게 해요.
+
 ## 수동 롤백
 
 실패가 promotion 이후 발견되면 승인된 관리자가 summary의 **이전 revision**이 READY인지 확인하고 다음 명령을 실제 이름으로 실행해요. 이전 트래픽이 분할돼 있었다면 summary의 각 비율을 복원해요.
@@ -26,6 +28,10 @@ gcloud run services update-traffic SERVICE --project=PROJECT --region=asia-north
 ```
 
 서비스 기본 URL에서 health·로그인·DB를 다시 확인하고 원인·SHA·시각을 기록해요. DB 수동 변경과 Secret 값은 revision 롤백으로 복원되지 않아요. JWT 교체·스키마 변경 전에는 이전 revision 호환성과 DB 백업을 먼저 검토해요.
+
+승인된 운영자는 같은 동작을 `bash scripts/rollback-cloud-run.sh PROJECT SERVICE PREVIOUS_REVISION`으로 실행할 수 있어요. 이 명령은 **실제 운영 트래픽을 바꿔요.** 프로젝트·서비스·직전 SHA와 DB/Secret 호환성을 검토한 뒤 실행해요. 스크립트는 대상 revision이 같은 서비스의 READY 상태인지 먼저 확인하고, 현재 트래픽의 revision/비율만 기록한 뒤 지정 revision에 100% 전환해요. 공개 서비스 health UP을 확인하며 실패하면 비정상 종료하고 추가 자동 전환은 하지 않아요. 기존 분할 트래픽을 그대로 복원하려면 위 gcloud 명령에 각 비율을 직접 지정해요.
+
+사용자 요청으로 추가 테스트·실제 롤백·운영 변경을 실행하지 않았어요. 이번 확인 범위는 bash 문법과 workflow 정적 검사뿐이에요. FE 주소·운영 환경 변수 변경은 아래 "운영 환경 변수 바꾸기"를 참고해요. 이 PR은 새 환경 변수·Secret·IAM·DB를 만들거나 바꾸지 않아요.
 
 Secret 교체는 새 버전을 만들고 승인 후 기존 서비스의 해당 환경 변수 참조만 새 **고정 버전**으로 바꿔 새 revision을 만들어요. 전체 환경 변수를 덮어쓰거나 latest를 사용하지 않아요.
 

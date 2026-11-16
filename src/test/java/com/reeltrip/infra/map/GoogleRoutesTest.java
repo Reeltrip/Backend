@@ -19,9 +19,10 @@ class GoogleRoutesTest {
         when(walk.body()).thenReturn("{\"routes\":[{\"duration\":\"1800s\"}]}".getBytes());
         when(drive.body()).thenReturn("{\"routes\":[{\"duration\":\"900s\"}]}".getBytes());
         when(http.send(any(),anyInt(),any())).thenReturn(transit,walk,drive);
-        var client=new GoogleRoutesClient(http,new ObjectMapper(),"test-key");
+        var now=Instant.parse("2026-11-16T01:00:00Z");
+        var client=new GoogleRoutesClient(http,new ObjectMapper(),"test-key",Clock.fixed(now,ZoneOffset.UTC));
         // when
-        var result=client.route(new RouteEstimate.Point(35,135),new RouteEstimate.Point(35.1,135.1),Instant.now());
+        var result=client.route(new RouteEstimate.Point(35,135),new RouteEstimate.Point(35.1,135.1),now.plusSeconds(3600));
         // then
         assertThat(result.duration()).isEqualTo(Duration.ofMinutes(10)); assertThat(result.segments().getFirst().mode()).isEqualTo("SUBWAY");
         assertThat(result.segments().getFirst().stopName()).isEqualTo("역"); assertThat(client.cacheable()).isFalse();

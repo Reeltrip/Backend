@@ -61,10 +61,25 @@ public class OpenApiConfig {
         tag("plan-draft-controller", "AI 초안", "AI가 숙소와 일자별 동선을 채워요 (S4-2).");
         tag("route-controller", "경로", "두 장소 사이 가장 빠른 경로 (S4-7a, S4-7b)");
         tag("plan-share-controller", "공유", "읽기 전용 / 함께 편집 링크 (S4-8)");
+        tag("admin-controller", "관리자", "ADMIN_USER_IDS에 등록된 회원만 사용해요. 초기화·샘플 생성은 별도 DEMO_USER_IDS 계정만 허용해요.");
     }
 
     /** "메서드 주소" → [요약, 설명] */
     private static final Map<String, String[]> OPERATIONS = Map.ofEntries(
+            op("GET /admin/api/me", "관리자 확인", "JWT의 회원이 관리자 허용 목록에 있고 현재 존재하는지 확인해요."),
+            op("GET /admin/api/users", "관리 계정 검색", "이메일·닉네임·회원 ID로 계정을 찾아요. 비밀번호·토큰은 반환하지 않아요."),
+            op("GET /admin/api/users/{userId}/sources", "계정의 링크 분석 조회", "링크별 처리 상태·실패 이유를 페이지로 읽어요. 분석을 재실행하지 않아요."),
+            op("GET /admin/api/users/{userId}/places", "계정의 카드 조회", "trash=true면 휴지통 카드를 읽어요."),
+            op("GET /admin/api/users/{userId}/places/{placeId}", "관리 카드 상세", "선택 계정 소유 카드의 기존 상세 응답을 반환해요."),
+            op("PATCH /admin/api/users/{userId}/places/{placeId}", "관리 카드 수정", "기존 도메인 검증으로 JSON에 포함된 필드만 바꿔요."),
+            op("DELETE /admin/api/users/{userId}/places/{placeId}", "관리 카드 휴지통 이동", "카드를 쓰는 계획의 노드·플랜B·숙소 선택도 기존 규칙대로 제거해요."),
+            op("POST /admin/api/users/{userId}/places/{placeId}/restorations", "관리 카드 복원", "보관함에만 복원하며 계획의 기존 자리는 돌아오지 않아요."),
+            op("GET /admin/api/users/{userId}/plans", "계정 소유 계획 조회", "선택 계정이 만든 계획만 페이지로 읽어요."),
+            op("GET /admin/api/users/{userId}/plans/{planId}", "관리 계획 상세", "선택 계정 소유를 검사한 뒤 기존 상세 응답을 반환해요."),
+            op("DELETE /admin/api/users/{userId}/plans/{planId}", "관리 계획 삭제", "일자·노드·숙소·멤버 관계를 함께 지워요. 복원할 수 없어요."),
+            op("GET /admin/api/users/{userId}/reset-preview", "데모 초기화 미리보기", "데모 계정만 허용해요. 테이블별 건수·차단 이유·대상 ID 집합 fingerprint·확인 문구를 반환해요."),
+            op("POST /admin/api/users/{userId}/resets", "데모 계정 데이터 초기화", "fingerprint와 확인 문구를 재검사하고 공유·진행 중 분석이 있으면409예요. 계정·인증정보·Storage 원본은 유지해요."),
+            op("POST /admin/api/users/{userId}/samples", "빈 데모 계정에 샘플 생성", "예시 카드 2장과 하루 여행·노드를 만들어요. Google·LLM을 호출하지 않아요. 기존 데이터가 있으면409예요."),
             op("POST /auth/password-reset", "비밀번호 재설정 링크 요청",
                     "이메일을 받아 메일 작업을 접수해요. 가입 여부·60초 내 재요청·발송 실패·대기열 포화와 관계없이 빈 200이에요. 링크는 30분 유효해요."),
             op("POST /auth/password-reset/verify", "재설정 링크 확인",
@@ -94,7 +109,7 @@ public class OpenApiConfig {
             op("POST /images", "사진 올리기",
                     "사진 파일(file)을 올리면 검사 뒤 Cloud Storage에 저장하고 공개 주소를 줘요. 그 주소를 카드의 imageUrl에 넣어요. (S2-2, S3-3)"),
             op("GET /place-search", "장소 검색",
-                    "장소·도시·구역 이름으로 Google Places를 검색해 현지 주소·좌표를 줘요. 직접 추가 카드와 구역 선택에 써요. (S3-3, S4-4)"),
+                    "장소·도시·구역 이름을 query(1~200자, 공백만 입력 불가)로 검색해 places 배열을 받아요. 결과 없음은200 빈 배열이에요. googlePlaceId·이름·좌표를 선택 상태에 함께 보관해요. 주소·imageUrl·googleMapsUri는 null일 수 있고 imageUrl은 현재 미제공이에요. 출처 표시는 attributionText·attributions를 함께 사용해요. (S3-3, S4-2, S4-4)"),
             op("GET /routes", "구간 경로",
                     "두 카드(from, to) 사이 가장 빠른 경로의 소요 시간과 구간(도보·지하철…)을 줘요. 계획을 볼 수 있는 사람만 불러요. (S4-7a, S4-7b)"),
             op("POST /places", "카드 저장 (여러 장)",
