@@ -18,7 +18,7 @@ public class SourceUrlClassifier {
     private static final Set<String> YOUTUBE = Set.of("youtube.com", "www.youtube.com", "m.youtube.com",
             "music.youtube.com", "youtu.be", "www.youtu.be");
     private static final Set<String> INSTAGRAM = Set.of("instagram.com", "www.instagram.com", "m.instagram.com");
-    private static final Set<String> NAVER_BLOG = Set.of("blog.naver.com", "m.blog.naver.com");
+    private static final Set<String> NAVER_BLOG = Set.of("blog.naver.com", "m.blog.naver.com", "naver.me");
 
     public Platform classify(String url) {
         String host = parse(url).getHost().toLowerCase(Locale.ROOT);
