@@ -16,3 +16,5 @@ GET /routes?from={placeId}&to={placeId}&departAt={ISO8601}는 로그인 회원�
 
 2026-11-17 보완(BE 2, 사용자 요청): Google은 DRIVE에 departureTime을 줄 때 `routingPreference`가 기본값(TRAFFIC_UNAWARE)이면 "Timestamp cannot be set for TRAFFIC_UNAWARE routing mode."로 거절해요. 그래서 departAt을 지정하면 차량 후보가 늘 빠지고 도보만 남았어요. 시각을 보내는 DRIVE에만 `routingPreference: TRAFFIC_AWARE`를 붙여요(Routes API Pro 요금 구간). 시각을 생략한 호출은 그대로예요.
 같은 날 실제 호출로 확인한 것: 오사카(난바→오사카성) TRANSIT은 시각 유무와 관계없이 빈 응답이에요. 같은 키로 서울역→강남은 지하철 경로가 나와요. 일본은 Google 경로 API에서 대중교통을 주지 않으니 오사카 계획의 경로는 택시·도보로만 나와요.
+
+2026-11-17 보완(구간 묶기): Google은 회전·직진마다 단계를 나눠 줘서 택시·도보 경로가 `TAXI 1 + TAXI 2 + …`처럼 10~20조각으로 나왔고, 단계마다 분을 올림해 구간 합이 총 소요시간보다 컸어요(16분 경로가 19분). 이제 이어진 도보·택시 단계는 한 구간으로 합치고, 대중교통은 노선마다 따로 둬요. 구간 분은 총 소요시간을 구간 길이 비율로 나눠 합이 `totalMinutes`와 같고, 짧은 구간도 1분 이상이에요.
