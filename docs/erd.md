@@ -11,6 +11,7 @@
 erDiagram
     user ||--o{ password_reset_token : "재설정"
     user ||--o{ refresh_token : "로그인 유지"
+    user ||--o{ inquiry : "1:1 문의"
     user ||--o{ source : "분석 요청"
     user ||--o{ place : "보관"
     user ||--o{ plan : "소유"
@@ -38,6 +39,16 @@ erDiagram
         datetime terms_agreed_at "필수 약관 2개 동의 일시"
         datetime created_at "생성 일시"
         datetime updated_at "수정 일시"
+        varchar avatar_url "프로필 사진 주소 (NULL이면 기본 사진)"
+    }
+
+    inquiry {
+        bigint inquiry_id PK "문의 ID"
+        bigint user_id FK "작성 회원 ID"
+        varchar type "문의 유형"
+        varchar content "문의 내용"
+        tinyint wants_reply_notification "답변 알림 수신 희망 여부"
+        datetime created_at "접수 일시"
     }
 
     email_code {
@@ -199,6 +210,7 @@ erDiagram
 | `email_code` | `EmailCode` | 6자리 인증번호와 만료 시각 | "인증번호는 DB에 만료 시각과 함께 저장" |
 | `password_reset_token` | (가정) | 비밀번호 재설정 링크 토큰 | 재설정 링크 발송 규칙. 저장 방식은 문서에 없음 |
 | `refresh_token` | (가정) | 로그인 상태 유지 토큰 | 리프레시 토큰 규칙. 저장 방식은 문서에 없음 |
+| `inquiry` | `Inquiry` | 마이페이지 1:1 문의 접수 내용 | BE #79, FE #44 |
 | `source` | `Source` | 분석 요청 한 번 | 폴더 구조 `source/entity` |
 | `source_link` | `SourceLink` | 링크 하나와 그 상태, 카드 초안 | 링크 분석 흐름 |
 | `place` | `Place` | 요약카드. 장소 6종과 교통·팁을 함께 담음 | S2-0, 요약카드 규칙 |
