@@ -100,6 +100,14 @@ public class AuthService {
                 jwtProvider.createAccessToken(user.getUserId()), rawRefreshToken);
     }
 
+    /** 로그아웃 (#79). 이미 지웠거나 모르는 토큰이어도 같은 결과라 여러 번 불러도 돼요. */
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        if (tokenCodec.isValidFormat(rawRefreshToken)) {
+            refreshTokens.deleteByToken(tokenCodec.hash(rawRefreshToken));
+        }
+    }
+
     @Transactional
     public TokenResponse refresh(String rawRefreshToken) {
         if (!tokenCodec.isValidFormat(rawRefreshToken)) {

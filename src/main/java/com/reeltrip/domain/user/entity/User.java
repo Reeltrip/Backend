@@ -37,6 +37,10 @@ public class User extends BaseTimeEntity {
     @Column(name = "terms_agreed_at", nullable = false)
     private LocalDateTime termsAgreedAt;
 
+    // 마이페이지 프로필 사진 (#79). null이면 FE가 기본 사진을 보여줘요.
+    @Column(name = "avatar_url", length = 2048)
+    private String avatarUrl;
+
     protected User() {
     }
 
@@ -57,6 +61,12 @@ public class User extends BaseTimeEntity {
 
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    /** 검사는 UserService가 해요. */
+    public void changeProfile(String nickname, String avatarUrl) {
+        this.nickname = nickname;
+        this.avatarUrl = avatarUrl;
     }
 
     public Long getUserId() {
@@ -81,5 +91,9 @@ public class User extends BaseTimeEntity {
 
     public LocalDateTime getTermsAgreedAt() {
         return termsAgreedAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
     }
 }

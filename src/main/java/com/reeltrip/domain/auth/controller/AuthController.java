@@ -64,4 +64,11 @@ public class AuthController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).header(HttpHeaders.PRAGMA, "no-cache")
                 .body(authService.refresh(request.refreshToken()));
     }
+
+    /** 마이페이지 로그아웃 (#79). 다른 기기의 로그인은 그대로 둬요. */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
+        authService.logout(request.refreshToken());
+        return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
+    }
 }

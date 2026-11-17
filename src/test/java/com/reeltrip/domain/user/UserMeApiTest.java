@@ -76,7 +76,7 @@ class UserMeApiTest {
     }
 
     @Test
-    @DisplayName("카드와 계획이 없으면 0과 명세의 다섯 필드만 반환한다.")
+    @DisplayName("카드·계획·사진이 없으면 0과 null, 명세의 여섯 필드만 반환한다.")
     void emptyProfileHasExactContract() throws Exception {
         // given / when
         String body = mvc.perform(get("/users/me").header("Authorization", bearer(member)))
@@ -85,12 +85,13 @@ class UserMeApiTest {
                 .andExpect(jsonPath("$.email").value(member.getEmail()))
                 .andExpect(jsonPath("$.nickname").value(member.getNickname()))
                 .andExpect(jsonPath("$.placeCount").value(0)).andExpect(jsonPath("$.planCount").value(0))
+                .andExpect(jsonPath("$.avatarUrl").value((Object) null))
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.accessToken").doesNotExist())
                 .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andReturn().getResponse().getContentAsString();
         // then
-        assertThat(mapper.readTree(body).size()).isEqualTo(5);
+        assertThat(mapper.readTree(body).size()).isEqualTo(6);
     }
 
     @Test
