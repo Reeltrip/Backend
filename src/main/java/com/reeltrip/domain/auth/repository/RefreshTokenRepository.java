@@ -25,6 +25,11 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("delete from RefreshToken refresh where refresh.user.userId = :userId")
     void deleteAllByUserUserId(@Param("userId") Long userId);
 
+    // 로그아웃 (#79). 지금 로그인의 토큰 하나만 지워요.
+    @Modifying(flushAutomatically = true)
+    @Query("delete from RefreshToken refresh where refresh.token = :token")
+    int deleteByToken(@Param("token") String token);
+
     @Query("select refresh.user.userId from RefreshToken refresh where refresh.token = :token")
     Optional<Long> userIdByToken(@Param("token") String token);
 }

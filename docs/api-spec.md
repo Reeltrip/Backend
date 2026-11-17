@@ -67,10 +67,13 @@
 | 인증 | POST | `/auth/signup` | 가입 후 바로 로그인 토큰 발급 | S0-1b | BE 1 |
 | 인증 | POST | `/auth/login` | 로그인 | S0-1a | BE 1 |
 | 인증 | POST | `/auth/refresh` | 토큰 재발급 | S0-1a | BE 1 |
+| 인증 | POST | `/auth/logout` | 지금 로그인의 리프레시 토큰 폐기 (#79) | 마이페이지 | BE 1 |
 | 인증 | POST | `/auth/password-reset` | 비밀번호 찾기: 재설정 링크 메일 발송 | S0-1a | BE 1 |
 | 인증 | POST | `/auth/password-reset/verify` | 재설정 링크가 쓸 수 있는지 확인 (추가) | 디자인 없음 | BE 1 |
 | 인증 | POST | `/auth/password-reset/confirm` | 새 비밀번호 저장 (추가) | 디자인 없음 | BE 1 |
-| 회원 | GET | `/users/me` | 닉네임, 보관함 카드 수, 여행목록 수 | S0-2 | BE 1 |
+| 회원 | GET | `/users/me` | 닉네임, 보관함 카드 수, 여행목록 수, 프로필 사진 | S0-2, 마이페이지 | BE 1 |
+| 회원 | PATCH | `/users/me` | 닉네임·프로필 사진 수정 (#79) | 마이페이지 | BE 1 |
+| 회원 | POST | `/inquiries` | 1:1 문의 접수 (#79) | 마이페이지 | BE 1 |
 | 링크 | GET | `/sources` | 최근 수집 내역 (Figma 반영) | Figma 링크 홈 | BE 1 |
 | 링크 | POST | `/sources` | 여러 링크를 한 번에 분석 시작 | S1-2 | BE 1 |
 | 링크 | GET | `/sources/{sourceId}` | 링크별 상태와 카드 초안 | S1-2, S1-3 | BE 1 |
@@ -204,6 +207,15 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 
 성공할 때 이전 리프레시 토큰을 교체하며, FE는 새 두 토큰을 함께 저장해요. 로그인 시 정한 리프레시 만료 시각은 연장하지 않아요.
 
+### POST `/auth/logout` (마이페이지, #79)
+
+`{ "refreshToken": "..." }` → `204`, 본문 없음. 액세스 토큰은 필요 없어요.
+
+- 보낸 리프레시 토큰 하나만 지워요. 그 토큰으로는 다시 재발급할 수 없고, 다른 기기의 로그인은 그대로예요.
+- 이미 로그아웃했거나 없는 토큰이어도 같은 `204`라 여러 번 불러도 돼요. FE는 응답과 관계없이 저장한 토큰을 지우면 돼요.
+- `refreshToken`이 없거나 빈 값이면 `400 INVALID_INPUT`.
+- 이미 발급한 액세스 토큰은 만료될 때까지 남아요. FE가 지워 주세요.
+
 ### 비밀번호 찾기 흐름 (S0-1a)
 
 비밀번호는 BCrypt로 한쪽 방향으로만 바꿔 저장하므로 원래 비밀번호를 꺼내 보여 줄 수 없습니다. "비밀번호 찾기"는 와이어프레임 S0-1a대로 가입한 이메일로 재설정 링크를 보내고, 링크에서 새 비밀번호를 정하는 방식입니다.
@@ -265,8 +277,43 @@ API는 BE 1이 15개, BE 2가 17개입니다(11/13에 S4-2 AI 초안 추가). �
 인증한 회원만 조회해요. 카드 수에는 교통·팁도 포함하고, 계획 수에는 OWNER·EDITOR·VIEWER로 참여한 계획을 모두 포함해요. DB에 회원이 없으면 `401 UNAUTHORIZED`, 응답은 캐시하지 않아요.
 
 ```json
-{ "userId": 1, "email": "traveler@email.com", "nickname": "보영", "placeCount": 27, "planCount": 3 }
+{ "userId": 1, "email": "traveler@email.com", "nickname": "보영", "placeCount": 27, "planCount": 3, "avatarUrl": null }
 ```
+
+`avatarUrl`은 프로필 사진 주소예요. 사진이 없으면 `null`이고 FE가 기본 사진을 보여줘요 (#79에서 추가).
+
+### PATCH `/users/me` (마이페이지 프로필 수정, #79)
+
+```json
+{ "nickname": "보영", "avatarUrl": "https://storage.googleapis.com/버킷/users/1/....png" }
+```
+
+`200`, `GET /users/me`와 같은 응답. 응답은 캐시하지 않아요.
+
+- 보낸 필드만 바꿔요. `nickname`을 빼면 닉네임 그대로, `avatarUrl`을 빼면 사진 그대로, `avatarUrl: null`이면 기본 사진으로 돌려요.
+- `nickname`: 앞뒤 공백을 빼고 1~8자 (가입과 같은 규칙). 빈 값·`null`·9자 이상은 `400 INVALID_INPUT`.
+- `avatarUrl`: `https` 주소, 2048자 이하. 사진은 먼저 `POST /images`로 올리고 받은 `imageUrl`을 넣어요. 다른 스킴·상대 주소·아이디가 든 주소는 `400 INVALID_INPUT`.
+- 이메일·회원 ID는 본문에 넣어도 무시해요. 바꾸는 회원은 항상 토큰의 회원이에요.
+
+### POST `/inquiries` (마이페이지 1:1 문의, #79)
+
+```json
+{ "type": "SERVICE_USAGE", "content": "문의 내용입니다.", "wantsReplyNotification": false }
+```
+
+`201 { "inquiryId": 1, "createdAt": "2026-11-17T15:00:00+09:00" }`
+
+| `type` | 화면 문구 |
+| --- | --- |
+| `SERVICE_USAGE` | 서비스 이용 문의 |
+| `ACCOUNT_LOGIN` | 계정 및 로그인 |
+| `TRAVEL_CARD_ERROR` | 여행 카드오류 |
+| `OTHER` | 기타 문의 |
+
+- 작성자는 토큰의 회원이에요. 본문에 회원 ID를 넣어도 무시해요.
+- `content`: 공백만 있으면 안 되고 300자 이하(FE 입력 제한과 같음). 앞뒤 공백은 빼고 저장해요.
+- 세 필드 모두 필수예요. 빠졌거나 표에 없는 `type`이면 `400 INVALID_INPUT`.
+- 답변 알림은 희망 여부만 저장하고 아직 보내지 않아요. 운영자 답변 화면·API도 아직 없어요.
 
 ## 링크 분석
 

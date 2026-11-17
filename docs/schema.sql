@@ -7,6 +7,7 @@ CREATE TABLE `user` (
   `terms_agreed_at` DATETIME NOT NULL COMMENT '필수 약관 2개 동의 일시',
   `created_at` DATETIME NOT NULL COMMENT '생성 일시',
   `updated_at` DATETIME NOT NULL COMMENT '수정 일시',
+  `avatar_url` VARCHAR(2048) NULL COMMENT '프로필 사진 주소 (NULL이면 기본 사진, #79)',
   PRIMARY KEY (`user_id`),
   CONSTRAINT `uk_user_email` UNIQUE (`email`)
 ) COMMENT='회원';
@@ -45,6 +46,17 @@ CREATE TABLE `refresh_token` (
   CONSTRAINT `uk_refresh_token_token` UNIQUE (`token`),
   CONSTRAINT `FK_user_TO_refresh_token_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
 ) COMMENT='리프레시 토큰';
+
+CREATE TABLE `inquiry` (
+  `inquiry_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '문의 ID',
+  `user_id` BIGINT NOT NULL COMMENT '작성 회원 ID',
+  `type` VARCHAR(30) NOT NULL COMMENT 'SERVICE_USAGE, ACCOUNT_LOGIN, TRAVEL_CARD_ERROR, OTHER',
+  `content` VARCHAR(1000) NOT NULL COMMENT '문의 내용 (API는 300자까지 받음)',
+  `wants_reply_notification` TINYINT(1) NOT NULL COMMENT '답변 알림 수신 희망 여부',
+  `created_at` DATETIME NOT NULL COMMENT '접수 일시',
+  PRIMARY KEY (`inquiry_id`),
+  CONSTRAINT `FK_user_TO_inquiry_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+) COMMENT='마이페이지 1:1 문의 (#79)';
 
 CREATE TABLE `source` (
   `source_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '분석 요청 ID',
