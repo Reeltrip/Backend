@@ -58,7 +58,7 @@ public class GoogleRoutesClient implements RoutesClient {
 
     private static RouteEstimate parse(JsonNode route,String requested) throws IOException {
         Duration duration=duration(route.path("duration").asText());
-        var segments=new ArrayList<RouteEstimate.Segment>();
+        var parts=new ArrayList<Part>();
         for(var leg:route.path("legs")) {
             for(var step:leg.path("steps")) {
                 String travel=step.path("travelMode").asText(requested);
@@ -73,11 +73,52 @@ public class GoogleRoutesClient implements RoutesClient {
                     if(line==null) { line=transit.path("transitLine").path("name").asText(null); }
                     stop=transit.path("stopDetails").path("arrivalStop").path("name").asText(null);
                 }
-                segments.add(new RouteEstimate.Segment(mode,minutes(duration(step.path("staticDuration").asText())),line,stop));
+                long seconds=duration(step.path("staticDuration").asText()).toSeconds();
+                boolean isRide=travel.equals("TRANSIT");
+                // Google은 회전·직진마다 단계를 나눠요. 화면 구간 막대에는 이어진 도보·택시를 한 구간으로 보여요. 탈것은 노선마다 따로 둬요.
+                Part last=parts.isEmpty()?null:parts.getLast();
+                if(!isRide && last!=null && !last.isRide() && last.mode().equals(mode)) {
+                    parts.set(parts.size()-1,new Part(mode,last.seconds()+seconds,null,null,false));
+                } else {
+                    parts.add(new Part(mode,seconds,line,stop,isRide));
+                }
             }
         }
-        if(segments.isEmpty()) { segments.add(new RouteEstimate.Segment(requested.equals("DRIVE")?"TAXI":requested,minutes(duration),null,null)); }
+        if(parts.isEmpty()) { parts.add(new Part(requested.equals("DRIVE")?"TAXI":requested,duration.toSeconds(),null,null,false)); }
+        int[] minutes=splitMinutes(parts,minutes(duration));
+        var segments=new ArrayList<RouteEstimate.Segment>();
+        for(int i=0;i<parts.size();i++) {
+            var part=parts.get(i);
+            segments.add(new RouteEstimate.Segment(part.mode(),minutes[i],part.lineName(),part.stopName()));
+        }
         return new RouteEstimate(duration,List.copyOf(segments));
+    }
+
+    private record Part(String mode,long seconds,String lineName,String stopName,boolean isRide) { }
+
+    /**
+     * 총 소요시간(분)을 구간 길이 비율로 나눠요. 단계 시간은 교통 반영 전 값이라 총 시간과 다를 수 있어서,
+     * 구간 분의 합이 화면의 총 소요시간과 같아지도록 맞추고, 짧은 구간도 막대에 보이게 1분 이상으로 둬요.
+     */
+    private static int[] splitMinutes(List<Part> parts,int totalMinutes) {
+        int[] result=new int[parts.size()];
+        if(parts.size()==1) { result[0]=totalMinutes; return result; }
+        long sum=parts.stream().mapToLong(Part::seconds).sum();
+        int assigned=0;
+        for(int i=0;i<parts.size();i++) {
+            double exact=sum==0?(double)totalMinutes/parts.size():(double)parts.get(i).seconds()*totalMinutes/sum;
+            result[i]=Math.max(1,(int)Math.round(exact));
+            assigned+=result[i];
+        }
+        // 반올림으로 생긴 차이는 가장 긴 구간에서 맞춰요. 모두 1분이면 더 줄이지 않아요.
+        while(assigned!=totalMinutes) {
+            int longest=0;
+            for(int i=1;i<result.length;i++) { if(result[i]>result[longest]) { longest=i; } }
+            if(assigned>totalMinutes && result[longest]<=1) { break; }
+            int step=assigned<totalMinutes?1:-1;
+            result[longest]+=step; assigned+=step;
+        }
+        return result;
     }
 
     private static Duration duration(String value) throws IOException {
