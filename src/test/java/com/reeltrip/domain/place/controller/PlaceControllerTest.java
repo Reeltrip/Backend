@@ -331,6 +331,27 @@ class PlaceControllerTest {
     }
 
     @Test
+    @DisplayName("보관함 목록은 카드에 바로 보여줄 가는 길·영업시간과, 교통·팁의 세부유형·적용지역·비용을 같이 내려준다.")
+    void getPlaces_includesCardSummaryFields() throws Exception {
+        // given: 가는 길·영업시간이 있는 맛집 카드와 교통 카드
+        Map<String, Object> food = PlaceTestFixtures.foodCard("하카타 잇소");
+        food.put("accessText", "하카타역 동쪽 도보 약 6~7분");
+        food.put("openingHours", "11:00-24:00");
+        postPlaces(List.of(food, PlaceTestFixtures.transportCard("오사카 주유패스"))).andExpect(status().isCreated());
+        // when / then
+        mockMvc.perform(get("/places").param("category", "FOOD").header("Authorization", bearer(myToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.places[0].accessText").value("하카타역 동쪽 도보 약 6~7분"))
+                .andExpect(jsonPath("$.places[0].openingHours").value("11:00-24:00"))
+                .andExpect(jsonPath("$.places[0].subType").value((Object) null));
+        mockMvc.perform(get("/places").param("category", "TRANSPORT").header("Authorization", bearer(myToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.places[0].subType").value("교통패스"))
+                .andExpect(jsonPath("$.places[0].applicableRegion").value("오사카"))
+                .andExpect(jsonPath("$.places[0].cost").value("¥3,300 (1일권)"));
+    }
+
+    @Test
     @DisplayName("보관함 목록은 page·size로 잘라서 내려주고 totalCount는 전체 개수다.")
     void getPlaces_paging() throws Exception {
         // given: 카드 3장

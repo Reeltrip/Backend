@@ -24,13 +24,21 @@ public record PlaceListResponse(
             Double longitude,
             String imageUrl,
             String priceText,
-            Integer reviewCount
+            Integer reviewCount,
+            // 카드 한 줄 요약에 바로 쓰는 값이에요. 목록 카드마다 상세를 따로 부르지 않게 같이 내려줘요.
+            String openingHours,
+            String accessText,
+            String subType,
+            String applicableRegion,
+            String cost
     ) {
 
         public static Item from(Place place) {
             return new Item(place.getPlaceId(), place.getCategory(), place.getName(), place.getAddress(),
                     PlaceResponse.toDouble(place.getLatitude()), PlaceResponse.toDouble(place.getLongitude()),
-                    place.getImageUrl(), place.getPriceText(), place.getReviewCount());
+                    place.getImageUrl(), place.getPriceText(), place.getReviewCount(),
+                    place.getOpeningHours(), place.getAccessText(),
+                    place.getSubType(), place.getApplicableRegion(), place.getCost());
         }
     }
 }
