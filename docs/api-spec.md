@@ -576,7 +576,12 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
       "longitude": 130.4245,
       "imageUrl": "https://storage.googleapis.com/...",
       "priceText": "¥960~980",
-      "reviewCount": 6500
+      "reviewCount": 6500,
+      "openingHours": "11:00-24:00",
+      "accessText": "하카타역 동쪽 도보 약 6~7분",
+      "subType": null,
+      "applicableRegion": null,
+      "cost": null
     }
   ],
   "categoryCounts": { "FOOD": 12, "CAFE": 5, "STAY": 2, "SIGHTSEEING": 4, "ACTIVITY": 1, "SHOPPING": 3, "TRANSPORT": 2, "TIP": 1 },
@@ -585,6 +590,8 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
   "totalCount": 30
 }
 ```
+
+`openingHours`·`accessText`(장소 카드)와 `subType`·`applicableRegion`·`cost`(교통·팁 카드)는 목록 카드의 한 줄 요약에 쓰는 값이고 없으면 `null`입니다(2026-11-17 추가, FE가 카드마다 상세를 따로 부르지 않게).
 
 `category`를 생략하면 전체입니다. `sortType` 값과 페이지 응답 필드 이름은 문서에 없어 정해야 합니다.
 
