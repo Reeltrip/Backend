@@ -42,7 +42,8 @@ public class UserService {
         if (body == null || !body.isObject()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        User user = findUser(userId);
+        // 회원 행 전체를 다시 쓰므로, 잠그지 않으면 그 사이 비밀번호 재설정으로 바뀐 비밀번호를 옛 값으로 되돌릴 수 있어요.
+        User user = users.findByIdForUpdate(userId).orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
         String nickname = body.has("nickname") ? validNickname(body.get("nickname")) : user.getNickname();
         String avatarUrl = body.has("avatarUrl") ? validAvatarUrl(body.get("avatarUrl")) : user.getAvatarUrl();
         user.changeProfile(nickname, avatarUrl);
