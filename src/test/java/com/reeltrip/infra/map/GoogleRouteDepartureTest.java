@@ -39,11 +39,11 @@ class GoogleRouteDepartureTest {
         // given / when
         var result=client().route(from,to,null);
         // then
-        assertThat(sent).hasSize(3).allMatch(body->!body.has("departureTime"));
+        assertThat(sent).hasSize(3).allMatch(body->!body.has("departureTime") && !body.has("routingPreference"));
         assertThat(result.segments().getFirst().mode()).isEqualTo("TAXI");
     }
 
-    @Test @DisplayName("미래 시각은 대중교통·차량에 정밀도를 보존해 보내고 도보에는 보내지 않는다.")
+    @Test @DisplayName("미래 시각은 대중교통·차량에 정밀도를 보존해 보내고, 차량은 교통 반영으로 요청하며 도보에는 보내지 않는다.")
     void explicitFutureIsPreserved() throws Exception {
         // given
         Instant future=NOW.plusSeconds(3600).plusNanos(123456);
@@ -54,6 +54,10 @@ class GoogleRouteDepartureTest {
         assertThat(sent.get(0).path("departureTime").asText()).isEqualTo(future.toString());
         assertThat(sent.get(1).has("departureTime")).isFalse();
         assertThat(sent.get(2).path("departureTime").asText()).isEqualTo(future.toString());
+        // Google은 차량에 출발 시각을 줄 때 교통 반영(TRAFFIC_AWARE)이 없으면 요청을 거절해요.
+        assertThat(sent.get(2).path("routingPreference").asText()).isEqualTo("TRAFFIC_AWARE");
+        assertThat(sent.get(0).has("routingPreference")).isFalse();
+        assertThat(sent.get(1).has("routingPreference")).isFalse();
     }
 
     @Test @DisplayName("앞선 호출 중 지정 시각이 지나면 차량을 미래로 바꾸지 않고 다른 후보만 반환한다.")

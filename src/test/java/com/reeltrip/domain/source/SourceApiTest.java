@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -108,6 +110,17 @@ class SourceApiTest {
     }
 
     @Test
+    @DisplayName("시연처럼 링크 7개 이상도 10개까지는 한 번에 접수한다.")
+    void acceptsUpToTenLinks() throws Exception {
+        // given: 링크 10개
+        var urls = IntStream.rangeClosed(1, 10).mapToObj(i -> "https://example.test/" + i).toList();
+        // when
+        long sourceId = create(urls);
+        // then
+        assertThat(links.findAllBySource_SourceIdOrderBySourceLinkIdAsc(sourceId)).hasSize(10);
+    }
+
+    @Test
     @DisplayName("중복 링크를 같은 요청이나 새 요청으로 접수해도 별도 링크로 저장한다.")
     void duplicateLinksAreAllowed() throws Exception {
         // given / when
@@ -122,8 +135,8 @@ class SourceApiTest {
     static Stream<String> invalidBodies() {
         return Stream.of(
                 "{}", "{\"urls\":null}", "{\"urls\":[]}", "{\"urls\":[null]}", "{\"urls\":[\" \"]}",
-                "{\"urls\":[\"https://example.test/1\",\"https://example.test/2\",\"https://example.test/3\","
-                        + "\"https://example.test/4\",\"https://example.test/5\",\"https://example.test/6\"]}",
+                "{\"urls\":[" + IntStream.rangeClosed(1, 11).mapToObj(i -> "\"https://example.test/" + i + "\"")
+                        .collect(Collectors.joining(",")) + "]}",
                 "{\"urls\":[\"not-a-url\"]}", "{\"urls\":[\"ftp://example.test/file\"]}",
                 "{\"urls\":[\"file:///private/file\"]}", "{\"urls\":[\"https://user:password@example.test/private\"]}",
                 "{\"urls\":[\"https://example.test:70000/path\"]}",

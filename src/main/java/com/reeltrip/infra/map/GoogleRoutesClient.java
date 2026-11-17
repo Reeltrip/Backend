@@ -41,6 +41,8 @@ public class GoogleRoutesClient implements RoutesClient {
                 body.set("destination",mapper.valueToTree(Map.of("location",Map.of("latLng",to))));
                 body.put("travelMode",mode); body.put("languageCode","ko");
                 if(!mode.equals("WALK") && departure!=null) { body.put("departureTime",departure.toString()); }
+                // 차량은 출발 시각을 줄 때 교통 반영이 없으면 Google이 요청을 거절해요(TRAFFIC_UNAWARE + 시각 = 400).
+                if(mode.equals("DRIVE") && departure!=null) { body.put("routingPreference","TRAFFIC_AWARE"); }
                 var request=HttpRequest.newBuilder(URI.create("https://routes.googleapis.com/directions/v2:computeRoutes"))
                         .timeout(Duration.ofSeconds(4)).header("X-Goog-Api-Key",key).header("Content-Type","application/json")
                         .header("X-Goog-FieldMask","routes.duration,routes.legs.steps.staticDuration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails")

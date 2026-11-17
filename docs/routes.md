@@ -13,3 +13,6 @@ GET /routes?from={placeId}&to={placeId}&departAt={ISO8601}는 로그인 회원�
 테스트는 가짜 RoutesClient·공식 JSON 고정 응답을 사용해 권한·공유 멤버·기본 시각·도착 시각·기한/실패·캐시 만료·권한 재확인을 확인해요. 실제 Maps 키·국가별 결과·FE 출처 표시와 공유 계획 리뷰는 남아 있어요.
 
 2026-11-16 출발 시각 보완은 13개 회귀 검증과 운영 JAR·mock 격리를 통과했어요. 지연 뒤 현재 요청의 차량 후보 유지, 미래 소수 초 보존, 지정 시각 경과·과거 DRIVE 제외, 즉시/명시 캐시 분리, 실제 루프백 HTTP 성공200·잘못된 시각400·미인증401을 확인했어요. 이후 사용자 요청으로 추가 테스트 실행과 운영 실호출은 생략해요. 기존 저장소 CI는 그대로 유지해요.
+
+2026-11-17 보완(BE 2, 사용자 요청): Google은 DRIVE에 departureTime을 줄 때 `routingPreference`가 기본값(TRAFFIC_UNAWARE)이면 "Timestamp cannot be set for TRAFFIC_UNAWARE routing mode."로 거절해요. 그래서 departAt을 지정하면 차량 후보가 늘 빠지고 도보만 남았어요. 시각을 보내는 DRIVE에만 `routingPreference: TRAFFIC_AWARE`를 붙여요(Routes API Pro 요금 구간). 시각을 생략한 호출은 그대로예요.
+같은 날 실제 호출로 확인한 것: 오사카(난바→오사카성) TRANSIT은 시각 유무와 관계없이 빈 응답이에요. 같은 키로 서울역→강남은 지하철 경로가 나와요. 일본은 Google 경로 API에서 대중교통을 주지 않으니 오사카 계획의 경로는 택시·도보로만 나와요.

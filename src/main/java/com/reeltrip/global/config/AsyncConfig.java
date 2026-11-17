@@ -31,7 +31,7 @@ public class AsyncConfig {
     @Bean(name = ANALYSIS_EXECUTOR)
     public Executor analysisExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        // 요청당 링크 최대 5개 × 동시에 몇 명. Cloud Run 인스턴스가 작아서 작게 잡아요.
+        // 요청당 링크 최대 10개 × 동시에 몇 명. Cloud Run 인스턴스가 작아서 작게 잡아요(큐가 차기 전엔 4개씩 처리).
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(100);
