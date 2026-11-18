@@ -65,6 +65,32 @@ class PlaceEnrichmentTest {
         assertThat(card.address()).hasSizeLessThanOrEqualTo(255);
     }
 
+    @Test @DisplayName("AI가 가격을 못 뽑았으면 Google 가격으로 채우고, 뽑았으면 그 값을 그대로 둔다. 숙소는 항상 비운다.")
+    void fillsMissingPriceFromGoogle() throws Exception {
+        // given
+        when(places.search(anyString())).thenReturn(List.of(new MapsPlace("id","가게","교토 주소",35.0,135.0,100,List.of(),null,List.of(),"¥1,000~2,000")));
+        var cards=List.of(draft(Category.FOOD,null),draft(Category.FOOD,"¥500"),draft(Category.STAY,null));
+        // when
+        var result=new PlaceEnrichmentService(places,true).enrich(7L,content,new ExtractionResult("교토",cards));
+        // then
+        assertThat(result).extracting(PlaceDraft::priceText).containsExactly("¥1,000~2,000","¥500",null);
+    }
+
+    @Test @DisplayName("Google 가격 문구가 카드 한도(50자)를 넘으면 줄여서 넣는다.")
+    void longGooglePriceFitsCardLimit() throws Exception {
+        // given
+        when(places.search(anyString())).thenReturn(List.of(new MapsPlace("id","가게","교토 주소",35.0,135.0,100,List.of(),null,List.of(),"9".repeat(80))));
+        // when
+        var card=new PlaceEnrichmentService(places,true).enrich(7L,content,new ExtractionResult("교토",List.of(draft(Category.FOOD,null)))).getFirst();
+        // then
+        assertThat(card.priceText()).hasSizeLessThanOrEqualTo(50).endsWith("…");
+    }
+
+    private static PlaceDraft draft(Category category,String priceText) {
+        return new PlaceDraft(null,category,"가게",null,null,null,null,null,null,"untrusted",42,
+                List.of("여행"),priceText,null,null,null,null,null,null,null,null,null,null,null);
+    }
+
     private static PlaceDraft draft(Category category) {
         return new PlaceDraft(null,category,"가게",null,null,null,null,null,null,"untrusted",42,
                 List.of("여행"),"¥500",null,null,null,null,null,null,null,null,null,null,null);
