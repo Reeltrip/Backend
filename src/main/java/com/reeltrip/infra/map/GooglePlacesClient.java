@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reeltrip.infra.http.BoundedHttp;
 
@@ -26,7 +27,7 @@ public class GooglePlacesClient implements PlacesClient {
         if(query==null || query.isBlank() || query.length()>200) { throw new IOException("검색어가 잘못됐어요."); }
         var request=HttpRequest.newBuilder(URI.create("https://places.googleapis.com/v1/places:searchText"))
                 .timeout(Duration.ofSeconds(4)).header("X-Goog-Api-Key",key).header("Content-Type","application/json")
-                .header("X-Goog-FieldMask","places.id,places.displayName,places.formattedAddress,places.location,places.userRatingCount,places.regularOpeningHours.weekdayDescriptions,places.googleMapsUri,places.attributions")
+                .header("X-Goog-FieldMask","places.id,places.displayName,places.formattedAddress,places.location,places.userRatingCount,places.regularOpeningHours.weekdayDescriptions,places.googleMapsUri,places.attributions,places.priceRange,places.priceLevel")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of("textQuery",query,"languageCode","ko","maxResultCount",20))))
                 .build();
         var response=http.send(request,1024*1024,Duration.ofSeconds(5));
@@ -52,9 +53,57 @@ public class GooglePlacesClient implements PlacesClient {
             if(mapUri!=null && !mapUri.startsWith("https://")) { mapUri=null; }
             places.add(new MapsPlace(id,name,place.path("formattedAddress").asText(null),lat,lng,
                     place.path("userRatingCount").canConvertToInt()?place.path("userRatingCount").asInt():null,
-                    List.copyOf(hours),mapUri,List.copyOf(attributions)));
+                    List.copyOf(hours),mapUri,List.copyOf(attributions),priceText(place)));
             if(places.size()==20) { break; }
         }
         return List.copyOf(places);
+    }
+
+    /**
+     * 가격 범위(예: ¥1,000~2,000)를 먼저 쓰고, 없으면 가격 수준(예: 가격대 보통)을 써요.
+     * 두 항목은 리뷰 수·영업시간과 같은 요금 구간이라 요청 단가가 늘지 않아요.
+     * 값이 이상하면 지어내지 않고 null로 둬요.
+     */
+    private static String priceText(JsonNode place) {
+        var range=place.path("priceRange");
+        var start=range.path("startPrice");
+        Long from=units(start);
+        if(from!=null) {
+            String currency=start.path("currencyCode").asText("");
+            var end=range.path("endPrice");
+            if(end.isMissingNode() || end.isNull()) { return symbol(currency)+String.format("%,d",from)+"~"; }
+            Long to=units(end);
+            if(to!=null && to>=from && currency.equals(end.path("currencyCode").asText(""))) {
+                return symbol(currency)+String.format("%,d",from)+"~"+String.format("%,d",to);
+            }
+            return null;
+        }
+        if(range.has("startPrice")) { return null; }
+        return switch(place.path("priceLevel").asText("")) {
+            case "PRICE_LEVEL_FREE" -> "무료";
+            case "PRICE_LEVEL_INEXPENSIVE" -> "가격대 낮음";
+            case "PRICE_LEVEL_MODERATE" -> "가격대 보통";
+            case "PRICE_LEVEL_EXPENSIVE" -> "가격대 높음";
+            case "PRICE_LEVEL_VERY_EXPENSIVE" -> "가격대 매우 높음";
+            default -> null;
+        };
+    }
+
+    /** Google Money의 units는 문자열로 온 정수예요. 음수·숫자 아님·통화 코드 형식 오류는 버려요. */
+    private static Long units(JsonNode money) {
+        if(!money.path("currencyCode").asText("").matches("[A-Z]{3}")) { return null; }
+        String units=money.path("units").asText("");
+        if(!units.matches("[0-9]{1,12}")) { return null; }
+        return Long.valueOf(units);
+    }
+
+    private static String symbol(String currency) {
+        return switch(currency) {
+            case "JPY" -> "¥";
+            case "USD" -> "$";
+            case "EUR" -> "€";
+            case "GBP" -> "£";
+            default -> currency+" ";
+        };
     }
 }

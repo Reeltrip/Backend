@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.infra.ai.ExtractionResult;
 import com.reeltrip.infra.ai.PlaceDraft;
 import com.reeltrip.infra.fetcher.FetchedContent;
@@ -16,6 +17,7 @@ public class PlaceEnrichmentService {
     /** place 테이블·PlaceValidator 한도. 넘기면 "모두 저장"이 INVALID_INPUT으로 막혀요. */
     static final int MAX_ADDRESS_LENGTH=255;
     static final int MAX_OPENING_HOURS_LENGTH=100;
+    static final int MAX_PRICE_TEXT_LENGTH=50;
     private static final String HOURS_SEPARATOR="; ";
     private static final String CUT_MARK="…";
 
@@ -42,7 +44,7 @@ public class PlaceEnrichmentService {
                     place==null?draft.latitude():place.latitude(),place==null?draft.longitude():place.longitude(),
                     place==null?draft.googlePlaceId():place.googlePlaceId(),draft.city()==null?result.city():draft.city(),
                     draft.imageUrl()==null?content.thumbnailUrl():draft.imageUrl(),content.url(),draft.sourceTimestampSec(),
-                    draft.keyPoints(),draft.priceText(),place==null?draft.reviewCount():place.reviewCount(),
+                    draft.keyPoints(),price(draft,place),place==null?draft.reviewCount():place.reviewCount(),
                     place==null?draft.openingHours():hours(place),draft.accessText(),draft.memo(),draft.subType(),
                     draft.applicableRegion(),draft.cost(),draft.benefit(),draft.method(),draft.placeText(),draft.caution()));
         }
@@ -61,6 +63,12 @@ public class PlaceEnrichmentService {
             fitted.setLength(0); fitted.append(next);
         }
         return fitted.isEmpty()?cut(value,MAX_OPENING_HOURS_LENGTH):fitted+CUT_MARK;
+    }
+
+    /** AI가 영상에서 뽑은 가격이 있으면 그 값을 쓰고, 없을 때만 Google 가격으로 채워요. 숙소는 날짜마다 달라 항상 비워요. */
+    private static String price(PlaceDraft draft,MapsPlace place) {
+        if(draft.priceText()!=null || place==null || draft.category()==Category.STAY) { return draft.priceText(); }
+        return cut(place.priceText(),MAX_PRICE_TEXT_LENGTH);
     }
 
     private static String cut(String value,int max) {
