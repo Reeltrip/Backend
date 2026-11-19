@@ -24,10 +24,17 @@ public class PlaceValidator {
     static final int MAX_MEMO_LENGTH = 50;
     static final int MAX_KEY_POINT_LENGTH = 100;
 
-    /** hasSourceLink: AI가 만든 카드인지. 그때만 sourceUrl이 필수예요. */
+    /**
+     * hasSourceLink: AI가 만든 카드인지. 그때만 sourceUrl과 사진이 필수예요.
+     * 직접 추가한 카드(S3-3, S4-3 숙소 검색)는 사진이 없어도 돼요. FE가 googlePlaceId로 마커 사진을 그려요 (#88).
+     */
     public void validate(PlaceContent content, boolean hasSourceLink) {
         validateFormat(content, hasSourceLink);
-        require(missingRequiredFields(content).isEmpty());
+        List<String> missing = missingRequiredFields(content);
+        if (!hasSourceLink) {
+            missing.remove("imageUrl");
+        }
+        require(missing.isEmpty());
     }
 
     /**
