@@ -24,12 +24,12 @@ class GoogleRouteDepartureTest {
         when(clock.instant()).thenReturn(NOW);
         when(http.send(any(),anyInt(),any())).thenAnswer(call->{
             JsonNode body=readBody(call.getArgument(0)); sent.add(body);
-            // 앞선 두 호출이 끝나기까지 10초가 걸린 상황도 재현해요.
+            // 앞선 두 호출이 끝나기까지 10초가 걸린 상황도 재현해요. 도보는 15분을 넘겨 가장 빠른 수단 비교로 가요(#95).
             when(clock.instant()).thenReturn(NOW.plusSeconds(10));
             var response=mock(HttpResponse.class);
             when(response.statusCode()).thenReturn(200);
             when(response.body()).thenReturn((body.path("travelMode").asText().equals("DRIVE")
-                    ?"{\"routes\":[{\"duration\":\"300s\"}]}":"{\"routes\":[{\"duration\":\"600s\"}]}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    ?"{\"routes\":[{\"duration\":\"300s\"}]}":"{\"routes\":[{\"duration\":\"1200s\"}]}").getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return response;
         });
     }
@@ -69,7 +69,7 @@ class GoogleRouteDepartureTest {
         // then
         assertThat(sent).extracting(body->body.path("travelMode").asText()).containsExactly("TRANSIT","WALK");
         assertThat(sent.getFirst().path("departureTime").asText()).isEqualTo(future.toString());
-        assertThat(result.duration()).isEqualTo(Duration.ofMinutes(10));
+        assertThat(result.duration()).isEqualTo(Duration.ofMinutes(20));
     }
 
     @Test @DisplayName("명시한 과거 출발은 대중교통에 보존하고 차량 API의 과거 시각 오류를 피한다.")
