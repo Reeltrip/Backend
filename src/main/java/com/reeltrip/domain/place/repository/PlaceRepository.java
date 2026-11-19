@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.reeltrip.domain.place.entity.Category;
 import com.reeltrip.domain.place.entity.Place;
+import com.reeltrip.domain.place.service.CityNames;
 
 /** 소유: place 팀원. plan 쪽에서 쓰는 메서드(count·find 메서드)는 이름을 바꾸지 마세요. */
 public interface PlaceRepository extends JpaRepository<Place, Long> {
@@ -20,11 +21,17 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     long countByUser_UserId(Long userId);
 
-    /** 계획 만들 때 그 도시의 장소 카드 수(loadedPlaceCount). categories에는 isPlace()인 것만 넘겨요. */
-    long countByUser_UserIdAndCityAndCategoryIn(Long userId, String city, Collection<Category> categories);
+    List<Place> findAllByUser_UserIdAndCategoryIn(Long userId, Collection<Category> categories);
 
-    /** 계획 보기의 tips: 그 도시의 교통·팁 카드 */
-    List<Place> findAllByUser_UserIdAndCityAndCategoryIn(Long userId, String city, Collection<Category> categories);
+    /**
+     * 그 도시의 카드. 계획 만들 때 장소 카드 수(loadedPlaceCount), AI 초안 후보, 계획 보기 tips에 써요.
+     * 계획 도시("오사카시")와 카드 도시("오사카")는 글자가 달라서 끝의 행정 단위를 떼고 비교해요 (#97)
+     */
+    default List<Place> findAllInSameCity(Long userId, String city, Collection<Category> categories) {
+        return findAllByUser_UserIdAndCategoryIn(userId, categories).stream()
+                .filter(place -> CityNames.isSame(place.getCity(), city))
+                .toList();
+    }
 
     List<Place> findAllByPlaceIdIn(Collection<Long> placeIds);
 

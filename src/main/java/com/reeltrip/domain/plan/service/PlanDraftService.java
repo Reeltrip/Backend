@@ -79,7 +79,7 @@ public class PlanDraftService {
         List<Place> chosenStays = plan.getStays().stream().map(PlanStay::getPlace).toList();
         boolean hasChosenStays = !chosenStays.isEmpty();
         List<PlanDraftRequest.Candidate> candidates = new ArrayList<>(placeRepository
-                .findAllByUser_UserIdAndCityAndCategoryIn(plan.getUser().getUserId(), plan.getCity(), PLACE_CATEGORIES)
+                .findAllInSameCity(plan.getUser().getUserId(), plan.getCity(), PLACE_CATEGORIES)
                 .stream()
                 .filter(place -> place.getLatitude() != null && place.getLongitude() != null)
                 .filter(place -> !hasChosenStays || place.getCategory() != Category.STAY)
@@ -140,7 +140,7 @@ public class PlanDraftService {
         plan.changeStatus(PlanStatus.COMPLETED);
         planRepository.flush();
 
-        List<Place> tips = placeRepository.findAllByUser_UserIdAndCityAndCategoryIn(
+        List<Place> tips = placeRepository.findAllInSameCity(
                 plan.getUser().getUserId(), plan.getCity(), TIP_CATEGORIES);
         return PlanDetailResponse.of(plan, access.role(), tips);
     }

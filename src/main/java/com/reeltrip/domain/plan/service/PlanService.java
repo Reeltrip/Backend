@@ -112,8 +112,7 @@ public class PlanService {
         }
         planRepository.save(plan);
 
-        long loadedPlaceCount = placeRepository.countByUser_UserIdAndCityAndCategoryIn(
-                userId, plan.getCity(), PLACE_CATEGORIES);
+        long loadedPlaceCount = placeRepository.findAllInSameCity(userId, plan.getCity(), PLACE_CATEGORIES).size();
         return new PlanCreateResponse(plan.getPlanId(), plan.getStatus(), dayCount, loadedPlaceCount);
     }
 
@@ -224,7 +223,7 @@ public class PlanService {
     }
 
     private PlanDetailResponse toDetail(Plan plan, PlanRole role) {
-        List<Place> tips = placeRepository.findAllByUser_UserIdAndCityAndCategoryIn(
+        List<Place> tips = placeRepository.findAllInSameCity(
                 plan.getUser().getUserId(), plan.getCity(), TIP_CATEGORIES);
         return PlanDetailResponse.of(plan, role, tips);
     }
