@@ -32,4 +32,10 @@ public record PlaceContent(
         String placeText,
         String caution
 ) {
+    /** 사진 주소만 바꾼 복사본 (#87 저장소로 옮긴 주소를 넣을 때) */
+    public PlaceContent withImageUrl(String newImageUrl) {
+        return new PlaceContent(category, name, address, latitude, longitude, googlePlaceId, city, newImageUrl, sourceUrl,
+                sourceTimestampSec, keyPoints, priceText, reviewCount, openingHours, accessText, memo, subType,
+                applicableRegion, cost, benefit, method, placeText, caution);
+    }
 }
