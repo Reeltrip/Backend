@@ -87,6 +87,7 @@
 | 카드 | DELETE | `/places/trash?placeIds=` | 휴지통에서 완전 삭제 (2026-11-15 추가) | Figma 3-3 | BE 2 |
 | 사진 | POST | `/images` | 사진 올리기 → Cloud Storage 주소 | S2-2, S3-3 | BE 1 |
 | 장소 검색 | GET | `/place-search` | 이름 → 현지 주소·좌표·사진 | S3-3 | BE 1 |
+| 장소 사진 | GET | `/place-photos` | 검색한 장소의 Google 사진 주소·출처 (저장 안 함) | S4-3 | BE 2 |
 | 계획 | GET | `/plans` | 작성 중인 계획, 내 계획, 공유받은 계획 | S4-0, S5-1 | BE 2 |
 | 계획 | POST | `/plans` | 여행명·기간·장소로 생성, 일자 자동 생성 | S4-1, S4-2 | BE 2 |
 | 계획 | GET | `/plans/{planId}` | 일자별 노드·플랜B·숙소 | S4-7 | BE 2 |
@@ -650,6 +651,22 @@ GET /places?latitude=34.6873&longitude=135.5262&radiusM=1500
 ```
 
 Google Maps 키는 BE에만 있어서 FE는 이 API를 거쳐 검색합니다.
+
+### GET `/place-photos?googlePlaceId=ChIJ...`
+
+검색 결과에서 고른 장소의 지도 마커에 넣을 Google 사진 한 장입니다. 로그인이 필요하고 응답은 `no-store`입니다.
+
+```json
+{
+  "photoUrl": "https://lh3.googleusercontent.com/...",
+  "attributions": [ { "displayName": "홍길동", "uri": "https://maps.google.com/maps/contrib/..." } ]
+}
+```
+
+- 사진이 없는 장소는 `200`에 `photoUrl: null`, `attributions: []`입니다.
+- `googlePlaceId` 형식이 잘못되면 `400 INVALID_INPUT`, Google 호출이 실패하면 `502 PLACE_SEARCH_FAILED`입니다. FE는 실패해도 기본 마커를 보여 주고 장소 선택을 계속합니다.
+- `photoUrl`은 Google이 잠깐만 열어 주는 주소입니다. FE·BE 모두 저장하지 않고, 카드의 `imageUrl`로 보내지 않습니다.
+- `attributions`가 있으면 사진과 함께 화면에 표시합니다.
 
 ## 여행계획
 
