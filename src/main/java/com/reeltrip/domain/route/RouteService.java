@@ -44,9 +44,12 @@ public class RouteService {
                 }
             }
         }
-        return new Response(GoogleRoutesClient.minutes(estimate.duration()),departure,departure.plus(estimate.duration()),estimate.segments());
+        return new Response(GoogleRoutesClient.minutes(estimate.duration()),departure,departure.plus(estimate.duration()),estimate.segments(),
+                estimate.encodedPolyline());
     }
-    public record Response(int totalMinutes,OffsetDateTime departAt,OffsetDateTime arriveAt,List<RouteEstimate.Segment> segments) { }
+    /** polyline: 지도에 그릴 길 모양(Google encoded polyline). 없으면 null이고 FE는 직선으로 그려요 (#93). */
+    public record Response(int totalMinutes,OffsetDateTime departAt,OffsetDateTime arriveAt,List<RouteEstimate.Segment> segments,
+            String polyline) { }
     private record Key(Long userId,Long from,Long to,RouteEstimate.Point start,RouteEstimate.Point end,Instant minute,boolean immediate) { }
     private record Cached(RouteEstimate estimate,Instant expires) { }
 }
