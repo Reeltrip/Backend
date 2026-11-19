@@ -30,7 +30,9 @@ public record PlaceListResponse(
             String accessText,
             String subType,
             String applicableRegion,
-            String cost
+            String cost,
+            // 사진 없는 카드의 지도 마커를 FE가 Google 사진으로 그릴 때 써요 (#91). 없으면 null
+            String googlePlaceId
     ) {
 
         public static Item from(Place place) {
@@ -38,7 +40,7 @@ public record PlaceListResponse(
                     PlaceResponse.toDouble(place.getLatitude()), PlaceResponse.toDouble(place.getLongitude()),
                     place.getImageUrl(), place.getPriceText(), place.getReviewCount(),
                     place.getOpeningHours(), place.getAccessText(),
-                    place.getSubType(), place.getApplicableRegion(), place.getCost());
+                    place.getSubType(), place.getApplicableRegion(), place.getCost(), place.getGooglePlaceId());
         }
     }
 }

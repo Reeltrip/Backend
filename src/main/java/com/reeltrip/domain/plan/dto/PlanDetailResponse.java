@@ -33,7 +33,9 @@ public record PlanDetailResponse(
         List<Day> days,
         List<Tip> tips) {
 
-    public record Stay(Long planStayId, Long placeId, String name, Double latitude, Double longitude) {
+    /** googlePlaceId: 사진 없는 카드의 마커를 FE가 Google 사진으로 그릴 때 써요 (#91). 없으면 null */
+    public record Stay(Long planStayId, Long placeId, String name, Double latitude, Double longitude,
+                       String googlePlaceId) {
     }
 
     public record Day(Long planDayId, int dayNumber, LocalDate date, boolean isCompleted,
@@ -44,7 +46,8 @@ public record PlanDetailResponse(
     }
 
     public record Node(Long planNodeId, int orderIndex, Long placeId, Category category, String name,
-                       Double latitude, Double longitude, String imageUrl, List<Alternative> alternatives) {
+                       Double latitude, Double longitude, String imageUrl, List<Alternative> alternatives,
+                       String googlePlaceId) {
     }
 
     public record Alternative(Long planAlternativeId, Long placeId, String name) {
@@ -70,7 +73,7 @@ public record PlanDetailResponse(
     private static Stay toStay(PlanStay stay) {
         Place place = stay.getPlace();
         return new Stay(stay.getPlanStayId(), place.getPlaceId(), place.getName(),
-                toDouble(place.getLatitude()), toDouble(place.getLongitude()));
+                toDouble(place.getLatitude()), toDouble(place.getLongitude()), place.getGooglePlaceId());
     }
 
     private static Day toDay(PlanDay day) {
@@ -92,7 +95,7 @@ public record PlanDetailResponse(
                 .toList();
         return new Node(node.getPlanNodeId(), node.getOrderIndex(), place.getPlaceId(), place.getCategory(),
                 place.getName(), toDouble(place.getLatitude()), toDouble(place.getLongitude()),
-                place.getImageUrl(), alternatives);
+                place.getImageUrl(), alternatives, place.getGooglePlaceId());
     }
 
     private static Alternative toAlternative(PlanAlternative alternative) {

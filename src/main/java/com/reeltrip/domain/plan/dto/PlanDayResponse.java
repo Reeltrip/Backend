@@ -49,7 +49,9 @@ public record PlanDayResponse(
             Double latitude,
             Double longitude,
             String imageUrl,
-            List<Alternative> alternatives
+            List<Alternative> alternatives,
+            // 사진 없는 카드의 마커를 FE가 Google 사진으로 그릴 때 써요 (#91). 없으면 null
+            String googlePlaceId
     ) {
 
         public static Node from(PlanNode node) {
@@ -63,7 +65,8 @@ public record PlanDayResponse(
                     toDouble(place.getLatitude()),
                     toDouble(place.getLongitude()),
                     place.getImageUrl(),
-                    node.getAlternatives().stream().map(Alternative::from).toList());
+                    node.getAlternatives().stream().map(Alternative::from).toList(),
+                    place.getGooglePlaceId());
         }
 
         private static Double toDouble(BigDecimal value) {
