@@ -26,6 +26,11 @@ public class GoogleRoutesClient implements RoutesClient {
     private final Clock clock;
     /** 응답 크기를 막는 한도예요. 도시 안 구간은 보통 수백~수천 자예요. */
     private static final int MAX_POLYLINE_LENGTH=20000;
+    /**
+     * 이 시간 안에 걸어갈 수 있으면 택시·대중교통이 더 빨라도 걷는 길을 골라요 (#95).
+     * 일본은 대중교통이 안 나와 500m 구간도 택시로 골라지고, 지도 선이 일방통행 길을 따라 2~3배로 빙 돌았어요.
+     */
+    private static final Duration MAX_PREFERRED_WALK=Duration.ofMinutes(15);
     public GoogleRoutesClient(BoundedHttp http,ObjectMapper mapper,@Value("${GOOGLE_MAPS_API_KEY:}") String key,Clock clock) {
         this.http=http; this.mapper=mapper; this.key=key; this.clock=clock;
     }
@@ -33,6 +38,7 @@ public class GoogleRoutesClient implements RoutesClient {
     @Override public RouteEstimate route(RouteEstimate.Point from,RouteEstimate.Point to,Instant departure) throws IOException {
         if(key.isBlank()) { throw new IOException("경로 API 설정이 필요해요."); }
         var candidates=new ArrayList<RouteEstimate>();
+        RouteEstimate walk=null;
         for(String mode:List.of("TRANSIT","WALK","DRIVE")) {
             if(Thread.currentThread().isInterrupted()) { throw new IOException("경로 요청이 중단됐어요."); }
             // TRANSIT만 과거 시각을 허용해요. 앞선 호출 중 지난 시각을 DRIVE에 보내지 않아요.
@@ -52,9 +58,14 @@ public class GoogleRoutesClient implements RoutesClient {
                 var response=http.send(request,1024*1024,Duration.ofSeconds(5));
                 if(response.statusCode()!=200) { continue; }
                 var root=mapper.readTree(response.body());
-                for(var route:root.path("routes")) { candidates.add(parse(route,mode)); }
+                for(var route:root.path("routes")) {
+                    var estimate=parse(route,mode);
+                    candidates.add(estimate);
+                    if(mode.equals("WALK") && (walk==null || estimate.duration().compareTo(walk.duration())<0)) { walk=estimate; }
+                }
             } catch(IOException | RuntimeException ignored) { /* 한 교통수단이 미지원이어도 나머지를 확인해요. */ }
         }
+        if(walk!=null && walk.duration().compareTo(MAX_PREFERRED_WALK)<=0) { return walk; }
         return candidates.stream().min(Comparator.comparing(RouteEstimate::duration)).orElseThrow(()->new IOException("경로가 없어요."));
     }
 
