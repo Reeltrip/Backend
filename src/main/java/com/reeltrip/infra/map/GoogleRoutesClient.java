@@ -24,6 +24,8 @@ public class GoogleRoutesClient implements RoutesClient {
     private final ObjectMapper mapper;
     private final String key;
     private final Clock clock;
+    /** 응답 크기를 막는 한도예요. 도시 안 구간은 보통 수백~수천 자예요. */
+    private static final int MAX_POLYLINE_LENGTH=20000;
     public GoogleRoutesClient(BoundedHttp http,ObjectMapper mapper,@Value("${GOOGLE_MAPS_API_KEY:}") String key,Clock clock) {
         this.http=http; this.mapper=mapper; this.key=key; this.clock=clock;
     }
@@ -45,7 +47,7 @@ public class GoogleRoutesClient implements RoutesClient {
                 if(mode.equals("DRIVE") && departure!=null) { body.put("routingPreference","TRAFFIC_AWARE"); }
                 var request=HttpRequest.newBuilder(URI.create("https://routes.googleapis.com/directions/v2:computeRoutes"))
                         .timeout(Duration.ofSeconds(4)).header("X-Goog-Api-Key",key).header("Content-Type","application/json")
-                        .header("X-Goog-FieldMask","routes.duration,routes.legs.steps.staticDuration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails")
+                        .header("X-Goog-FieldMask","routes.duration,routes.polyline.encodedPolyline,routes.legs.steps.staticDuration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails")
                         .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body))).build();
                 var response=http.send(request,1024*1024,Duration.ofSeconds(5));
                 if(response.statusCode()!=200) { continue; }
@@ -91,7 +93,16 @@ public class GoogleRoutesClient implements RoutesClient {
             var part=parts.get(i);
             segments.add(new RouteEstimate.Segment(part.mode(),minutes[i],part.lineName(),part.stopName()));
         }
-        return new RouteEstimate(duration,List.copyOf(segments));
+        return new RouteEstimate(duration,List.copyOf(segments),polyline(route));
+    }
+
+    /**
+     * S4-7 계획 보기 지도에서 동선을 실제 길을 따라 그릴 때 써요. 소요시간과 같은 호출에서 받아서 호출 횟수는 그대로예요.
+     * encoded polyline은 ASCII 63(?)~126(~) 글자만 써요. 모양이 다르면 지어내지 않고 비워요.
+     */
+    private static String polyline(JsonNode route) {
+        String value=route.path("polyline").path("encodedPolyline").asText("");
+        return value.matches("[?-~]{1,"+MAX_POLYLINE_LENGTH+"}")?value:null;
     }
 
     private record Part(String mode,long seconds,String lineName,String stopName,boolean isRide) { }

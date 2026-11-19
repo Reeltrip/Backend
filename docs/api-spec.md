@@ -864,11 +864,13 @@ Google Maps 키는 BE에만 있어서 FE는 이 API를 거쳐 검색합니다.
     { "mode": "WALK", "minutes": 4, "lineName": null, "stopName": null },
     { "mode": "SUBWAY", "minutes": 12, "lineName": "미도스지선", "stopName": "난바역" },
     { "mode": "WALK", "minutes": 2, "lineName": null, "stopName": null }
-  ]
+  ],
+  "polyline": "_p~iF~ps|U_ulLnnqC_mqNvxq`@"
 }
 ```
 
 - 대중교통·도보·택시 중 가장 빠른 경로 하나만 내려줍니다. 실패는 `ROUTE_NOT_FOUND`.
+- `polyline`은 그 경로의 길 모양입니다(Google encoded polyline, 정밀도 5). 지도에 동선을 실제 길을 따라 그릴 때 씁니다. 받지 못하면 null이고 FE는 두 장소를 직선으로 잇습니다(2026-11-19).
 - `segments`는 화면 구간 막대용이에요. 이어진 도보·택시는 한 구간으로 합치고 대중교통은 노선마다 따로 둬요. 구간 `minutes`의 합은 `totalMinutes`와 같고, 각 구간은 1분 이상이에요(2026-11-17).
 - 일본(오사카 등)은 Google 경로 API가 대중교통을 주지 않아 택시·도보만 나옵니다(2026-11-17 확인, [routes.md](routes.md)).
 - 디자인의 "경로 간단히 보기"는 총 소요시간과 구간 막대만 보여 주고, 자세한 길 안내는 "지도 앱에서 길찾기"로 넘깁니다. 그래서 요금·환승 수·단계별 안내 문구는 뺐습니다. 지도 앱 주소는 FE가 두 장소의 좌표로 만듭니다.
