@@ -13,6 +13,10 @@ spring:
 app:
   analysis:
     enabled: false
+  images:
+    # 테스트에서는 외부 사진을 내려받거나 저장소에 올리지 않아요.
+    archive-external: false
+    backfill-on-startup: false
   jwt:
     # 테스트용 값. 실제 키가 아니에요.
     secret: test-only-jwt-secret-key-for-reeltrip-0123456789

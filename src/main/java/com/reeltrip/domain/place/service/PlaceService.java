@@ -3,6 +3,7 @@ package com.reeltrip.domain.place.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +52,13 @@ public class PlaceService {
     private final PlanStayRepository planStayRepository;
     private final PlaceValidator placeValidator;
     private final ObjectMapper objectMapper;
+    private final PlaceImageArchiver imageArchiver;
 
     public PlaceService(PlaceRepository placeRepository, SourceLinkRepository sourceLinkRepository,
                         UserRepository userRepository, PlanNodeRepository planNodeRepository,
                         PlanAlternativeRepository planAlternativeRepository, PlanStayRepository planStayRepository,
-                        PlaceValidator placeValidator, ObjectMapper objectMapper) {
+                        PlaceValidator placeValidator, ObjectMapper objectMapper,
+                        PlaceImageArchiver imageArchiver) {
         this.placeRepository = placeRepository;
         this.sourceLinkRepository = sourceLinkRepository;
         this.userRepository = userRepository;
@@ -64,6 +67,7 @@ public class PlaceService {
         this.planStayRepository = planStayRepository;
         this.placeValidator = placeValidator;
         this.objectMapper = objectMapper;
+        this.imageArchiver = imageArchiver;
     }
 
     /**
@@ -74,7 +78,7 @@ public class PlaceService {
     @Transactional
     public PlaceCreateResponse createPlaces(Long userId, PlaceCreateRequest request) {
         User user = userRepository.getReferenceById(userId);
-        List<Place> places = new ArrayList<>();
+        List<PendingCard> pending = new ArrayList<>();
         List<PlaceCreateResponse.Skipped> skipped = new ArrayList<>();
         for (int index = 0; index < request.places().size(); index++) {
             PlaceCardRequest card = request.places().get(index);
@@ -85,7 +89,7 @@ public class PlaceService {
             PlaceContent content = toContent(card);
             if (sourceLink == null) {
                 placeValidator.validate(content, false);
-                places.add(Place.create(user, null, content));
+                pending.add(new PendingCard(null, content));
                 continue;
             }
             placeValidator.validateFormat(content, true);
@@ -95,13 +99,23 @@ public class PlaceService {
                         index, sourceLink.getSourceLinkId(), content.name(), missingFields));
                 continue;
             }
-            places.add(Place.create(user, sourceLink, content));
+            pending.add(new PendingCard(sourceLink, content));
         }
+        // 모든 카드가 검사를 통과한 뒤에만 사진을 옮겨요. 같은 링크의 카드는 사진이 같아서 한 번만 옮겨요 (#87)
+        Map<String, String> archivedUrls = new HashMap<>();
+        List<Place> places = pending.stream().map(card -> {
+            String imageUrl = card.content().imageUrl();
+            String archived = imageUrl == null ? null : archivedUrls.computeIfAbsent(imageUrl, imageArchiver::archive);
+            return Place.create(user, card.sourceLink(), card.content().withImageUrl(archived));
+        }).toList();
         List<PlaceCreateResponse.Item> saved = placeRepository.saveAll(places).stream()
                 .map(PlaceCreateResponse.Item::from)
                 .toList();
         return new PlaceCreateResponse(saved, List.copyOf(skipped));
     }
+
+    /** 검사를 통과해 저장을 기다리는 카드 */
+    private record PendingCard(SourceLink sourceLink, PlaceContent content) { }
 
     /**
      * GET /places. categoryCounts는 category 필터와 관계없이 세고 반경 필터는 적용해요(decisions #11).

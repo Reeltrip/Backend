@@ -4,6 +4,18 @@
 - 출처: 11/1·11/6 회의록, Figma 디자인(11/10), API 명세서·ERD·역할 분담(11/10~11/12).
 - "FE 합의 필요"로 표시한 것은 지금 형태로 만들되, PR 본문 "정한 것"에 적습니다.
 
+## 2026-11-19 #87 카드 사진을 저장소로 옮기기 (사용자 요청)
+
+- 문제: 링크 분석 카드의 `imageUrl`은 원본 썸네일 주소예요. 인스타그램 주소에는 만료 시각(`oe`)이 있어서 며칠 뒤 사진이 사라져요. 11/17에 만든 카드는 11/22 08:42(KST)에 만료돼요.
+- `POST /places`로 카드를 저장할 때, 우리 저장소 주소와 유튜브 썸네일(`*.ytimg.com`, 만료 없음)이 아닌 사진은 Cloud Storage `places/archive/`로 옮기고 그 주소를 저장해요. 같은 요청 안의 같은 사진은 한 번만 옮겨요.
+- 옮기지 못하면(내려받기 실패·1MiB 초과·PNG/JPEG 아님·저장 실패) 원래 주소로 저장해요. 카드 저장은 막지 않아요. 로그에 `stage=download|validate|store`와 호스트만 남겨요.
+- 이미 저장된 카드는 서버가 뜰 때 한 번 옮겨요(`PlaceImageBackfill`, 한 번에 사진 300장까지). 옮긴 카드는 다음부터 대상이 아니에요. 휴지통 카드는 옮기지 않아요.
+- 끄는 법: `app.images.archive-external=false`(옮기기 전체), `app.images.backfill-on-startup=false`(기존 카드 옮기기만).
+- Google Places 사진은 대상이 아니에요. 11-15 결정("Places 사진을 Storage로 영구 복사하지 않아요") 그대로예요. 지금 카드에는 Google 사진 주소가 들어가지 않아요.
+- 외부 사진은 링크 본문 수집과 같은 규칙으로 받아요(https·공개 주소만, 이동마다 재검사, 검사한 IP로만 접속). BE 1의 기존 파일은 고치지 않고 `infra/fetcher/web`에 `RemoteImageClient`만 추가했어요. BE 1 검토가 필요해요.
+- API 형식·DB 구조 변경 없음. 기존 카드의 `image_url` 값이 저장소 주소로 바뀌어요.
+- 확인 못 한 것: 실제 Cloud Storage 저장은 로컬에 버킷이 없어 확인하지 못했어요(로컬 로그는 `stage=store`에서 멈춤). 저장 코드는 `POST /images`와 같은 `StorageClient`예요.
+
 ## 2026-11-19 #85 검색한 장소의 Google 사진 조회 (사용자 요청, FE #74)
 
 - `GET /place-photos?googlePlaceId=`를 추가했어요. S4-3 숙소 검색 등에서 고른 검색 결과의 마커에 사진을 넣는 용도예요. 형식은 [api-spec.md](api-spec.md)에 있어요.
