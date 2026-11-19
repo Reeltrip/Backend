@@ -526,7 +526,7 @@ S2-1 "모두 저장"과 S3-3 직접 추가가 같은 주소를 씁니다.
 }
 ```
 
-- 장소 카드 필수: `imageUrl`, `category`, `name`, `address`, `latitude`, `longitude`. `sourceUrl`은 AI가 만든 카드에서만 필수. AI 카드의 필수 항목이 비면 아래 `skipped` 규칙을 따릅니다.
+- 장소 카드 필수: `category`, `name`, `address`, `latitude`, `longitude`. `imageUrl`과 `sourceUrl`은 AI가 만든 카드에서만 필수(직접 추가·숙소 검색 카드는 사진 없이 저장되고 응답의 `imageUrl`이 null). AI 카드의 필수 항목이 비면 아래 `skipped` 규칙을 따릅니다.
 - `keyPoints`는 최대 3개. 서버에서도 검사합니다.
 - `priceText`, `memo`는 50자까지(디자인 직접 추가 화면). `reviewCount`, `openingHours`, `accessText`는 없으면 `null`.
 - 교통·팁 카드는 아래 항목을 씁니다. 값이 없으면 `null`.
