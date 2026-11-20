@@ -228,15 +228,13 @@ public class PlanEditService {
         }
     }
 
-    /** 교통·팁은 노드·플랜B에 못 넣고, 플랜B는 대신할 노드와 같은 카테고리만(decisions #3) */
     private void validatePlaceKinds(List<PlanDayUpdateRequest.Node> nodeRequests, Map<Long, Place> places) {
         for (PlanDayUpdateRequest.Node nodeRequest : nodeRequests) {
-            Category nodeCategory = places.get(nodeRequest.placeId()).getCategory();
-            if (!nodeCategory.isPlace()) {
+            if (!places.get(nodeRequest.placeId()).getCategory().isPlace()) {
                 throw new BusinessException(ErrorCode.INVALID_PLAN_PLACE);
             }
             for (Long alternativeId : nodeRequest.alternativePlaceIdsOrEmpty()) {
-                if (places.get(alternativeId).getCategory() != nodeCategory) {
+                if (!places.get(alternativeId).getCategory().isPlace()) {
                     throw new BusinessException(ErrorCode.INVALID_PLAN_PLACE);
                 }
             }

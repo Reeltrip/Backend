@@ -763,7 +763,7 @@ Google Maps 키는 BE에만 있어서 FE는 이 API를 거쳐 검색합니다.
           "longitude": 135.501,
           "imageUrl": "https://storage.googleapis.com/...",
           "alternatives": [
-            { "planAlternativeId": 9, "placeId": 120, "name": "킨류 라멘" }
+            { "planAlternativeId": 9, "placeId": 120, "name": "카페 모닝", "category": "CAFE" }
           ]
         }
       ]
@@ -816,6 +816,8 @@ Google Maps 키는 BE에만 있어서 FE는 이 API를 거쳐 검색합니다.
 
 - 배열 순서가 `orderIndex`입니다.
 - 같은 장소 카드는 한 계획 안에서 한 번만 확정할 수 있습니다.
+- 플랜B는 맛집·카페·숙소·관광지·액티비티·쇼핑 중 하나면 노드와 다른 카테고리도 저장할 수 있습니다. 교통·팁 카드는 제외합니다.
+- 저장 응답의 `nodes[].alternatives[].category`와 계획 상세 응답의 해당 필드는 플랜B 장소의 카테고리입니다.
 - 노드가 빠지면 그 노드의 플랜B도 같이 지웁니다.
 - 모든 일자가 완성되면 계획 상태가 `COMPLETED`가 됩니다.
 - 읽기 전용 멤버가 부르면 `403 PLAN_FORBIDDEN`.
