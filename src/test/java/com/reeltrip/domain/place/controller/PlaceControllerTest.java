@@ -181,6 +181,10 @@ class PlaceControllerTest {
         mockMvc.perform(get("/places/{placeId}", placeId).header("Authorization", bearer(myToken)))
                 .andExpect(jsonPath("$.sourceLinkId").value(link.getSourceLinkId()))
                 .andExpect(jsonPath("$.sourceUrl").value("https://www.youtube.com/shorts/test"));
+        mockMvc.perform(get("/places").header("Authorization", bearer(myToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.places[0].placeId").value(placeId))
+                .andExpect(jsonPath("$.places[0].sourceUrl").value("https://www.youtube.com/shorts/test"));
     }
 
     @Test
@@ -317,6 +321,7 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.places[*].placeId",
                         contains(food2.getPlaceId().intValue(), food1.getPlaceId().intValue())))
+                .andExpect(jsonPath("$.places[0].sourceUrl").value((Object) null))
                 .andExpect(jsonPath("$.totalCount").value(2))
                 .andExpect(jsonPath("$.page").value(0))
                 .andExpect(jsonPath("$.size").value(20))
