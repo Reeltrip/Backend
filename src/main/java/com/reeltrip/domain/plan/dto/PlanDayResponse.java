@@ -77,14 +77,17 @@ public record PlanDayResponse(
     public record Alternative(
             Long planAlternativeId,
             Long placeId,
-            String name
+            String name,
+            Category category
     ) {
 
         public static Alternative from(PlanAlternative alternative) {
+            Place place = alternative.getPlace();
             return new Alternative(
                     alternative.getPlanAlternativeId(),
-                    alternative.getPlace().getPlaceId(),
-                    alternative.getPlace().getName());
+                    place.getPlaceId(),
+                    place.getName(),
+                    place.getCategory());
         }
     }
 }

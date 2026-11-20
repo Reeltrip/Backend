@@ -50,7 +50,7 @@ public record PlanDetailResponse(
                        String googlePlaceId) {
     }
 
-    public record Alternative(Long planAlternativeId, Long placeId, String name) {
+    public record Alternative(Long planAlternativeId, Long placeId, String name, Category category) {
     }
 
     public record Tip(Long placeId, Category category, String name, String imageUrl) {
@@ -100,7 +100,8 @@ public record PlanDetailResponse(
 
     private static Alternative toAlternative(PlanAlternative alternative) {
         Place place = alternative.getPlace();
-        return new Alternative(alternative.getPlanAlternativeId(), place.getPlaceId(), place.getName());
+        return new Alternative(alternative.getPlanAlternativeId(), place.getPlaceId(), place.getName(),
+                place.getCategory());
     }
 
     private static Double toDouble(BigDecimal value) {

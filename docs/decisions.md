@@ -164,7 +164,7 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 | --- | --- | --- |
 | 1 | 숙소 단위 | `AGENTS.md`의 "일자마다 숙소" 대신 스키마대로 계획 단위(`plan_stay`). 일자별 출발·도착 숙소는 저장하지 않음 |
 | 2 | 남의 비공유 계획 조회 | `404` (`403 PLAN_FORBIDDEN`은 공유받은 멤버가 권한 밖 동작을 할 때만) |
-| 3 | 플랜B 카테고리 | 대신할 노드와 같은 카테고리만 허용 |
+| 3 | 플랜B 카테고리 | 대신할 노드와 같은 카테고리만 허용 (2026-11-20 #101에서 변경) |
 | 4 | `memo` 길이 | 서버 검사 50자, 컬럼 `VARCHAR(500)`은 그대로 |
 | 5 | `place.city` | 카드 요청·응답에 `city`(선택) 추가. AI 카드는 `ExtractionResult.city`, 직접 추가는 FE가 보냄. 계획 도시와 글자가 같은 카드를 불러옴 |
 | 6 | `PATCH /plans/{planId}` 기간 줄이기 | 없어지는 일자와 그 일자의 노드·플랜B·구역을 같이 삭제(FE가 확인 팝업). 시작일이 바뀌면 남은 일자 날짜를 다시 매김 |
@@ -245,4 +245,9 @@ Java 21, Spring Boot 3.x, Gradle, Spring Data JPA, MySQL 8(Cloud SQL), Spring Se
 - 기존 FE 경로 `/password-reset?token=`을 SHARE_BASE_URL에 붙여요. 새 환경 변수 없이 prod는 공개 HTTPS FE 주소를 요구해요. FE 화면 연동과 실메일 재설정은 병합 후 확인해야 해요.
 - 회원→토큰 순서로 로그인·refresh·재설정을 잠가요. 비밀번호 변경·일회 소비·모든 본인 refresh 폐기를 원자적으로 처리해요. 기존 access JWT의 최대30분 만료 정책은 유지해요.
 - #17 PR #36은 최신 main을 병합해 충돌을 해소하고 독립적으로 검증해요. 운영 health·가입 Swagger는 확인했지만 GET /sources는 아직 없어 다른 BE 리뷰·병합·자동 배포가 필요해요.
+
+## 2026-11-20 #101 플랜B 카테고리
+
+- 다른 카테고리의 장소 카드도 플랜B로 저장해요. 후보는 장소 6종이고 교통·팁 카드는 제외해요.
+- 일자 저장과 계획 상세 응답의 플랜B 항목에 실제 장소의 `category`를 내려줘요.
 

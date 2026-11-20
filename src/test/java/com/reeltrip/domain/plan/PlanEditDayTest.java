@@ -1,6 +1,8 @@
 package com.reeltrip.domain.plan;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,6 +12,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,7 +59,6 @@ class PlanEditDayTest {
     Place sushi;
     Place udon;
     Place cafe;
-    Place tip;
     Plan plan;
 
     @BeforeEach
@@ -68,7 +71,6 @@ class PlanEditDayTest {
         sushi = placeRepository.save(PlanEditFixtures.place(owner, Category.FOOD, "효탄 스시"));
         udon = placeRepository.save(PlanEditFixtures.place(owner, Category.FOOD, "우동 타이라"));
         cafe = placeRepository.save(PlanEditFixtures.place(owner, Category.CAFE, "노 커피"));
-        tip = placeRepository.save(PlanEditFixtures.place(owner, Category.TIP, "지하철 1일권"));
         plan = PlanEditFixtures.plan(owner, 2);
         plan.addMember(editor, PlanRole.EDITOR);
         plan.addMember(viewer, PlanRole.VIEWER);
@@ -159,35 +161,47 @@ class PlanEditDayTest {
     }
 
     @Test
-    @DisplayName("플랜B는 대신할 노드와 같은 카테고리의 카드만 넣을 수 있다.")
-    void saveDay_alternativeCategory() throws Exception {
-        // given: 빈 1일차
+    @DisplayName("맛집 노드에 맛집과 카페를 플랜B로 저장하고 각 장소의 카테고리를 조회한다.")
+    void saveDay_acceptsAlternativesAcrossCategories() throws Exception {
+        // given: 빈 1일차와 맛집·카페 카드
         em.clear();
 
-        // when / then: 맛집 노드에 카페 플랜B는 400
-        saveDay(owner, 1, nodes(node(ramen, cafe)), false)
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_PLAN_PLACE"));
-        // when / then: 맛집 노드에 맛집 플랜B는 저장됨
-        saveDay(owner, 1, nodes(node(ramen, sushi)), false)
+        // when: 맛집 노드에 맛집·카페 대안을 함께 저장
+        ResultActions result = saveDay(owner, 1, nodes(node(ramen, sushi, cafe)), false);
+
+        // then: 저장 응답과 재조회에 플랜B의 실제 카테고리가 내려옴
+        result
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nodes[0].alternatives.length()").value(1))
+                .andExpect(jsonPath("$.nodes[0].alternatives.length()").value(2))
                 .andExpect(jsonPath("$.nodes[0].alternatives[0].placeId").value(sushi.getPlaceId()))
-                .andExpect(jsonPath("$.nodes[0].alternatives[0].planAlternativeId").isNumber());
+                .andExpect(jsonPath("$.nodes[0].alternatives[0].category").value("FOOD"))
+                .andExpect(jsonPath("$.nodes[0].alternatives[1].placeId").value(cafe.getPlaceId()))
+                .andExpect(jsonPath("$.nodes[0].alternatives[1].category").value("CAFE"))
+                .andExpect(jsonPath("$.nodes[0].alternatives[1].planAlternativeId").isNumber());
+
+        em.flush();
+        em.clear();
+        mockMvc.perform(get("/plans/{planId}", plan.getPlanId()).header("Authorization", bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.days[0].nodes[0].alternatives[?(@.placeId == "
+                        + cafe.getPlaceId() + ")].category", contains("CAFE")));
     }
 
-    @Test
+    @ParameterizedTest
+    @EnumSource(value = Category.class, names = {"TRANSPORT", "TIP"})
     @DisplayName("교통·팁 카드는 노드로도 플랜B로도 넣을 수 없다.")
-    void saveDay_tipCard_rejected() throws Exception {
-        // given: 빈 1일차
+    void saveDay_nonPlaceCard_rejected(Category category) throws Exception {
+        // given: 빈 1일차와 교통 또는 팁 카드
+        Place nonPlace = placeRepository.save(PlanEditFixtures.place(owner, category, "지하철 1일권"));
+        em.flush();
         em.clear();
 
-        // when / then: 팁 카드를 노드로
-        saveDay(owner, 1, nodes(node(tip)), false)
+        // when / then: 카드를 노드로 추가하면 실패
+        saveDay(owner, 1, nodes(node(nonPlace)), false)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PLAN_PLACE"));
-        // when / then: 팁 카드를 플랜B로
-        saveDay(owner, 1, nodes(node(ramen, tip)), false)
+        // when / then: 카드를 플랜B로 추가해도 실패
+        saveDay(owner, 1, nodes(node(ramen, nonPlace)), false)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PLAN_PLACE"));
     }
